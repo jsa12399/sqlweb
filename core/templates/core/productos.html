@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Productos Fitness{% endblock %}
+
+{% block content %}
+  <h1 style="text-align: center; margin-top: 2rem; color: #1e3a8a;">Catálogo de Productos Fitness</h1>
+
+  <div class="productos-lista">
+    <div class="producto-card">
+      <img src="{% static 'core/img/proteina.jpg' %}" alt="Proteína">
+      <h3>Snack de Proteína</h3>
+      <p>Ideal para recuperación muscular</p>
+      <span>$4.990</span>
+      <input type="number" min="1" value="1">
+      <button>Agregar</button>
+    </div>
+    <div class="producto-card">
+      <img src="{% static 'core/img/mancuernas.jpg' %}" alt="Mancuernas">
+      <h3>Mancuernas Ajustables</h3>
+      <p>Perfectas para entrenar en casa</p>
+      <span>$5.990</span>
+      <input type="number" min="1" value="1">
+      <button>Agregar</button>
+    </div>
+    <div class="producto-card">
+      <img src="{% static 'core/img/creatina.jpg' %}" alt="Creatina">
+      <h3>Creatina</h3>
+      <p>Suplemento que te ayudará a fortalecer tu físico.</p>
+      <span>$14.500</span>
+      <input type="number" min="1" value="1">
+      <button>Agregar</button>
+    </div>
+  </div>
+
+  <div id="carrito">
+    <h2>Carrito de compras</h2>
+    <!-- Lista y total se llenarán con JavaScript -->
+  </div>
+
+  <script>
+    const carrito = [];
+
+    const botonesAgregar = document.querySelectorAll('.producto-card button');
+
+    botonesAgregar.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const productoCard = btn.parentElement;
+        const nombre = productoCard.querySelector('h3').textContent;
+        const precioText = productoCard.querySelector('span').textContent;
+        // Convertir precio $X.XXX a número entero (ej: 4990)
+        const precio = Number(precioText.replace(/[\$\.]/g, ''));
+        const cantidadInput = productoCard.querySelector('input[type="number"]');
+        let cantidad = parseInt(cantidadInput.value);
+
+        if (cantidad <= 0 || isNaN(cantidad)) {
+          alert('Ingrese una cantidad válida');
+          return;
+        }
+
+        const existente = carrito.find(item => item.nombre === nombre);
+        if (existente) {
+          existente.cantidad += cantidad;
+        } else {
+          carrito.push({ nombre, precio, cantidad });
+        }
+
+        cantidadInput.value = 1; // reset cantidad
+        actualizarCarrito();
+      });
+    });
+
+    function actualizarCarrito() {
+      let lista = document.getElementById('carrito-lista');
+      let total = 0;
+
+      if (!lista) {
+        lista = document.createElement('ul');
+        lista.id = 'carrito-lista';
+        document.getElementById('carrito').appendChild(lista);
+      }
+
+      lista.innerHTML = '';
+
+      carrito.forEach(item => {
+        const li = document.createElement('li');
+        const subtotal = item.precio * item.cantidad;
+        total += subtotal;
+        li.textContent = `${item.nombre} - Cantidad: ${item.cantidad} - $${subtotal.toLocaleString()}`;
+        lista.appendChild(li);
+      });
+
+      let totalElem = document.getElementById('carrito-total');
+      if (!totalElem) {
+        totalElem = document.createElement('div');
+        totalElem.id = 'carrito-total';
+        document.getElementById('carrito').appendChild(totalElem);
+      }
+      totalElem.textContent = `Total: $${total.toLocaleString()}`;
+    }
+  </script>
+{% endblock %}

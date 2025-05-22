@@ -69,7 +69,7 @@ nav ul.menu li.submenu ul {
     border-radius: 5px;
     min-width: 180px;
     z-index: 10;
-    list-style: none; 
+    list-style: none;
 }
 
 nav ul.menu li.submenu:hover ul {
@@ -121,20 +121,74 @@ nav ul.menu li.submenu ul li a:hover {
 
 .productos ul {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
     list-style: none;
-    padding: 0;
+    padding: 1rem;
+    justify-items: center;
 }
 
 .productos li {
-    background-color: #f3f4f6;
+    background-color: #ffffff;
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: 10px;
     text-align: center;
-    font-weight: bold;
+    font-weight: normal;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
 }
 
+.productos li:hover {
+    transform: translateY(-4px);
+}
+
+/* Aquí está el ajuste clave para las imágenes */
+.productos li img {
+    width: 100%;           /* que ocupen todo el ancho del contenedor */
+    max-height: 140px;     /* limitar altura para que no sean muy grandes */
+    object-fit: cover;     /* recorta si es necesario sin distorsionar */
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+}
+
+.productos li h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+    color: #1e3a8a;
+}
+
+.productos li p {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 0.4rem;
+}
+
+.productos li .precio {
+    font-weight: bold;
+    color: #16a34a;
+}
+
+.ver-mas {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.ver-mas a {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background-color: #1e3a8a;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.ver-mas a:hover {
+    background-color: #1e40af;
+}
+
+/* LOGIN Y REGISTRO */
 .auth-container {
     max-width: 400px;
     margin: 2rem auto;
@@ -189,4 +243,43 @@ nav ul.menu li.submenu ul li a:hover {
     color: #1e3a8a;
     text-decoration: none;
     font-weight: bold;
+}
+
+/* Productos grid */
+.productos-grid {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.producto {
+    background-color: #f8fafc;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 200px;
+}
+
+.producto img {
+    width: 100%;
+    max-height: 10px;      /* límite similar para consistencia */
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Botones */
+.btn-destacado {
+    background-color: #1e3a8a;
+    color: #fff;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-destacado:hover {
+    background-color: #3b82f6;
 }

@@ -1,18 +1,31 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
-    <section class="hero">
-        <h1>SportFit</h1>
-        <p>Tu tienda integral de salud, nutrición y deporte</p>
-    </section>
+<section class="hero">
+    <h1>SportFit</h1>
+    <p>Bienvenido a tu tienda fitness de confianza</p>
+</section>
 
-    <section class="productos">
-        <h2>Productos destacados</h2>
-        <ul>
-            <li>Mancuernas ajustables</li>
-            <li>Comida saludable</li>
-            <li>Proteína vegetal</li>
-            <li>Queratina deportiva</li>
-        </ul>
-    </section>
+<section class="productos">
+    <h2>Productos destacados</h2>
+    <div class="productos-grid">
+        <div class="producto">
+            <img src="{% static 'core/img/mancuernas.jpg' %}" alt="Mancuernas">
+            <p>Mancuernas Profesionales</p>
+        </div>
+        <div class="producto">
+            <img src="{% static 'core/img/creatina.jpg' %}" alt="Creatina">
+            <p>Creatina</p>
+        </div>
+        <div class="producto">
+            <img src="{% static 'core/img/proteina.jpg' %}" alt="Snack de proteina">
+            <p>Snacks de proteina</p>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{% url 'productos' %}" class="btn-destacado">Ir a los productos</a>
+    </div>
+</section>
 {% endblock %}

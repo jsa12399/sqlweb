@@ -38,3 +38,6 @@ def register_view(request):
         else:
             return render(request, 'core/register.html', {'error': 'Las contraseñas no coinciden'})
     return render(request, 'core/register.html')
+
+def ver_productos(request):
+    return render(request, 'core/productos.html')
