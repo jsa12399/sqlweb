@@ -1,0 +1,192 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Fuente general y fondo */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+/* HEADER y MENÚ */
+header {
+    background-color: #0f172a; /* Azul oscuro elegante */
+    padding: 1rem 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+nav ul.menu {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    list-style: none;
+    gap: 2rem;
+    background-color: #0f172a;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+}
+
+nav ul.menu li {
+    position: relative;
+}
+
+nav ul.menu li a {
+    color: #f1f5f9;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    display: block;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+nav ul.menu li a:hover {
+    background-color: #1e293b;
+    color: #facc15;
+}
+
+/* Submenú */
+nav ul.menu li.submenu ul {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #1e293b;
+    padding: 0.5rem 0;
+    display: none;
+    flex-direction: column;
+    border-radius: 5px;
+    min-width: 180px;
+    z-index: 10;
+    list-style: none; 
+}
+
+nav ul.menu li.submenu:hover ul {
+    display: flex;
+}
+
+nav ul.menu li.submenu ul li a {
+    padding: 0.5rem 1rem;
+    color: #f8fafc;
+}
+
+nav ul.menu li.submenu ul li a:hover {
+    background-color: #334155;
+}
+
+/* HERO */
+.hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    background-color: #e0f2fe;
+    color: #1e40af;
+    border-bottom: 1px solid #dbeafe;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+}
+
+/* SECCIÓN PRODUCTOS */
+.productos {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.productos h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.productos ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+}
+
+.productos li {
+    background-color: #f3f4f6;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.auth-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.auth-container h2 {
+    text-align: center;
+    color: #1e3a8a;
+    margin-bottom: 1rem;
+}
+
+.auth-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.auth-container input {
+    width: 100%;
+    padding: 0.6rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.auth-container button {
+    width: 100%;
+    padding: 0.7rem;
+    background-color: #1e3a8a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.auth-container button:hover {
+    background-color: #1e40af;
+}
+
+.registro-link {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.registro-link a {
+    color: #1e3a8a;
+    text-decoration: none;
+    font-weight: bold;
+}

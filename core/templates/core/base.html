@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportFit</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav>
+            <ul class="menu">
+                
+                <li><a href="{% url 'index' %}">Inicio</a></li>
+                <li class="submenu">
+                    <a href="#">Servicios</a>
+                    <ul>
+                        
+                        <li><a href="{% url 'nutricionista' %}">Nutricionista</a></li>
+                        <li><a href="{% url 'preparadorfisico' %}">Preparador físico</a></li>
+
+                    </ul>
+                </li>
+                <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+</body>
+</html>

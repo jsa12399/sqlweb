@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/nutricionista.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="servicio-nutricionista">
+    <img src="{% static 'core/img/preparadorifisico.jpg' %}" alt="Preparador físico">
+    <div>
+        <h2>Servicio de Preparador Físico</h2>
+        <p>¡Pon tu cuerpo en movimiento y alcanza tu mejor versión con nuestro entrenamiento personalizado!</p>
+        <button onclick="document.getElementById('formulario').style.display='block'">Inscribirse</button>
+
+        <div id="formulario" style="display: none; margin-top: 20px;">
+            <h3>Precios y Registro</h3>
+            <p>Plan mensual: $30.000 CLP<br>Plan trimestral: $85.000 CLP</p>
+            <form method="post">
+                {% csrf_token %}
+                <label>Nombre: <input type="text" name="nombre"></label><br>
+                <label>Apellido: <input type="text" name="apellido"></label><br>
+                <label>Edad: <input type="number" name="edad"></label><br>
+                <label>RUT: <input type="text" name="rut"></label><br>
+                <label>Teléfono: <input type="text" name="telefono"></label><br>
+                <label>Correo: <input type="email" name="correo"></label><br>
+                <button type="submit">Enviar</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

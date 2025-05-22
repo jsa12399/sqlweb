@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/nutricionista.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="servicio-nutricionista" style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center;">
+    <img src="{% static 'core/img/nutricionista.jpg' %}" alt="Nutricionista" style="width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <div style="max-width: 450px;">
+        <h2>Servicio de Nutricionista</h2>
+        <p>Ofrecemos asesoramiento nutricional personalizado para mejorar tu salud y alcanzar tus objetivos físicos.</p>
+        <button onclick="document.getElementById('formulario').style.display='block'">Inscribirse</button>
+
+        <div id="formulario" style="display: none; margin-top: 20px;">
+            <h3>Precios y Registro</h3>
+            <p>Plan mensual: $30.000 CLP<br>Plan trimestral: $85.000 CLP</p>
+            <form method="post">
+                {% csrf_token %}
+                <label>Nombre: <input type="text" name="nombre" required></label><br>
+                <label>Apellido: <input type="text" name="apellido" required></label><br>
+                <label>Edad: <input type="number" name="edad" min="0" required></label><br>
+                <label>RUT: <input type="text" name="rut" required></label><br>
+                <label>Teléfono: <input type="text" name="telefono" required></label><br>
+                <label>Correo: <input type="email" name="correo" required></label><br>
+                <button type="submit">Enviar</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Puedes agregar un poco de JS para animar o mejorar la experiencia si quieres
+</script>
+{% endblock %}

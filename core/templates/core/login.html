@@ -1,0 +1,17 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="auth-container">
+    <h2>Iniciar Sesión</h2>
+    <form method="post">
+        {% csrf_token %}
+        <label for="email">Correo electrónico:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Iniciar sesión</button>
+    </form>
+    <p class="registro-link">¿No tienes cuenta? <a href="{% url 'register' %}">Regístrate</a></p>
+</div>
+{% endblock %}
