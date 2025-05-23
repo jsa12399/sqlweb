@@ -1,5 +1,28 @@
+# settings.py
+
 from pathlib import Path
 import os
+import oracledb # Importa oracledb aquí
+
+# Si tienes problemas con Instant Client o quieres forzar el modo Thin,
+# puedes inicializar oracledb aquí.
+# Si NO tienes Instant Client instalado, oracledb intentará conectarse en modo Thin por defecto.
+# Si el modo Thin NO te funciona y tienes Instant Client, deberías quitar esta línea y
+# asegurarte de que Instant Client esté en tu PATH o especificar lib_dir.
+# En la mayoría de los casos, si usas `oracledb` sin Instant Client,
+# no necesitas `oracledb.init_oracle_client()` explícitamente.
+# La remoción de 'thin_mode' de OPTIONS es la clave.
+try:
+    # Esto es más para casos donde el modo Thick es necesario y el cliente no está en PATH
+    # Si estás usando el modo Thin (sin Instant Client), generalmente NO es necesario.
+    # oracledb.init_oracle_client()
+    pass
+except oracledb.Error as e:
+    # Puedes manejar el error si oracledb no puede encontrar las librerías cliente,
+    # aunque para el modo Thin no suele ser un problema de este tipo.
+    print(f"Error al inicializar oracledb: {e}")
+    pass
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',
+    'core', # Tu aplicación 'core'
 ]
 
 MIDDLEWARE = [
@@ -36,7 +59,7 @@ ROOT_URLCONF = 'gymlife.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Asegúrate de que esta ruta sea correcta para tus templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -54,8 +77,20 @@ WSGI_APPLICATION = 'gymlife.wsgi.application'
 # Base de datos
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'orcl', # Confirma que 'XE' es tu SID o Service Name
+        'USER': 'WEBFIT', # Tu nombre de usuario de Oracle
+        'PASSWORD': 'hola123', # Tu contraseña de Oracle
+        'HOST': 'localhost', # La IP o nombre de host de tu servidor Oracle
+        'PORT': '1521', # El puerto de tu base de datos Oracle (por defecto 1521)
+        'OPTIONS': {
+            # Hemos quitado 'encoding' y 'thin_mode' de aquí porque causan TypeError
+            # oracledb usa UTF-8 por defecto en modo Thin.
+            # Si tu base de datos está en otro charset o tienes problemas con caracteres,
+            # considera configurar la variable de entorno NLS_LANG en tu sistema.
+            # Ejemplo (para Windows, antes de ejecutar manage.py): set NLS_LANG=SPANISH_SPAIN.AL32UTF8
+            # Para Linux/macOS: export NLS_LANG=SPANISH_SPAIN.AL32UTF8
+        }
     }
 }
 
