@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.humanize',
     'django.contrib.staticfiles',
     'core', # Tu aplicación 'core'
 ]
@@ -78,7 +79,7 @@ WSGI_APPLICATION = 'gymlife.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'orcl', # Confirma que 'XE' es tu SID o Service Name
+        'NAME': 'XE', # Confirma que 'XE' es tu SID o Service Name
         'USER': 'WEBFIT', # Tu nombre de usuario de Oracle
         'PASSWORD': 'hola123', # Tu contraseña de Oracle
         'HOST': 'localhost', # La IP o nombre de host de tu servidor Oracle

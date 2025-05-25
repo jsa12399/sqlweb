@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load humanize %} {# Asegúrate de cargar humanize para intcomma #}
 
 {% block title %}Productos Fitness{% endblock %}
 
@@ -7,35 +8,45 @@
   <h1 style="text-align: center; margin-top: 2rem; color: #1e3a8a;">Catálogo de Productos Fitness</h1>
 
   <div class="productos-lista">
+    {# Itera sobre la lista de productos que te pasó la vista #}
+    {% for producto in productos %}
     <div class="producto-card">
-      <img src="{% static 'core/img/proteina.jpg' %}" alt="Proteína">
-      <h3>Snack de Proteína</h3>
-      <p>Ideal para recuperación muscular</p>
-      <span>$4.990</span>
+      {# Lógica para mostrar la imagen basada en el nombre del producto #}
+      {# Esto es una solución temporal si no tienes un campo de imagen en tu DB #}
+      {% if "Proteína" in producto.nombre %}
+          <img src="{% static 'core/img/proteina.jpg' %}" alt="{{ producto.nombre }}">
+      {% elif "Mancuernas" in producto.nombre %}
+          <img src="{% static 'core/img/mancuernas.jpg' %}" alt="{{ producto.nombre }}">
+      {% elif "Creatina" in producto.nombre %}
+          <img src="{% static 'core/img/creatina.jpg' %}" alt="{{ producto.nombre }}">
+      {% else %}
+          {# Considera tener una imagen por defecto (default.jpg) si agregas más productos #}
+          <img src="{% static 'core/img/default.jpg' %}" alt="{{ producto.nombre }}">
+      {% endif %}
+
+      {# Muestra el nombre, descripción y precio_unitario del producto desde la base de datos #}
+      <h3>{{ producto.nombre }}</h3>
+      <p>{{ producto.descripcion }}</p>
+      {# Aquí se aplica el filtro intcomma para formatear el número con separador de miles #}
+      <span>${{ producto.precio_unitario|intcomma }}</span>
+
       <input type="number" min="1" value="1">
-      <button>Agregar</button>
+      {# Asegúrate de que el botón tenga un data-producto-id para JavaScript si lo vas a usar en el futuro #}
+      <button data-producto-id="{{ producto.id_producto }}">Agregar</button>
     </div>
-    <div class="producto-card">
-      <img src="{% static 'core/img/mancuernas.jpg' %}" alt="Mancuernas">
-      <h3>Mancuernas Ajustables</h3>
-      <p>Perfectas para entrenar en casa</p>
-      <span>$5.990</span>
-      <input type="number" min="1" value="1">
-      <button>Agregar</button>
-    </div>
-    <div class="producto-card">
-      <img src="{% static 'core/img/creatina.jpg' %}" alt="Creatina">
-      <h3>Creatina</h3>
-      <p>Suplemento que te ayudará a fortalecer tu físico.</p>
-      <span>$14.500</span>
-      <input type="number" min="1" value="1">
-      <button>Agregar</button>
-    </div>
+    {% empty %} {# Esto se muestra si no hay productos en la lista #}
+    <p>No hay productos disponibles en este momento en la base de datos.</p>
+    {% endfor %}
   </div>
 
   <div id="carrito">
     <h2>Carrito de compras</h2>
-    <!-- Lista y total se llenarán con JavaScript -->
+    <ul id="carrito-lista">
+      {# Lista y total se llenarán con JavaScript #}
+    </ul>
+    <div id="carrito-total">
+      {# El total se llenará con JavaScript #}
+    </div>
   </div>
 
   <script>
@@ -48,10 +59,17 @@
         const productoCard = btn.parentElement;
         const nombre = productoCard.querySelector('h3').textContent;
         const precioText = productoCard.querySelector('span').textContent;
-        // Convertir precio $X.XXX a número entero (ej: 4990)
-        const precio = Number(precioText.replace(/[\$\.]/g, ''));
+        
+        // CORRECTED LINE: Versión para parsear precios con '$', '&nbsp;' como separador de miles, y ',' como decimal.
+        let precioLimpio = precioText.replace(/\$/g, ''); // 1. Eliminar el signo de dólar
+        precioLimpio = precioLimpio.replace(/\s/g, ''); // 2. Eliminar cualquier espacio (incluido &nbsp; que se convierte en espacio en textContent)
+        precioLimpio = precioLimpio.replace(/,/g, '.'); // 3. Reemplazar la coma decimal por un punto decimal
+
+        const precio = Number(precioLimpio); // Ahora sí, convertir a número
+
         const cantidadInput = productoCard.querySelector('input[type="number"]');
         let cantidad = parseInt(cantidadInput.value);
+        const productoId = btn.dataset.productoId; 
 
         if (cantidad <= 0 || isNaN(cantidad)) {
           alert('Ingrese una cantidad válida');
@@ -62,41 +80,42 @@
         if (existente) {
           existente.cantidad += cantidad;
         } else {
-          carrito.push({ nombre, precio, cantidad });
+          carrito.push({ id: productoId, nombre, precio, cantidad });
         }
 
-        cantidadInput.value = 1; // reset cantidad
+        cantidadInput.value = 1;
         actualizarCarrito();
       });
     });
 
     function actualizarCarrito() {
-      let lista = document.getElementById('carrito-lista');
-      let total = 0;
+        let lista = document.getElementById('carrito-lista');
+        let total = 0;
 
-      if (!lista) {
-        lista = document.createElement('ul');
-        lista.id = 'carrito-lista';
-        document.getElementById('carrito').appendChild(lista);
-      }
+        if (!lista) {
+            lista = document.createElement('ul');
+            lista.id = 'carrito-lista';
+            document.getElementById('carrito').appendChild(lista);
+        }
 
-      lista.innerHTML = '';
+        lista.innerHTML = '';
 
-      carrito.forEach(item => {
-        const li = document.createElement('li');
-        const subtotal = item.precio * item.cantidad;
-        total += subtotal;
-        li.textContent = `${item.nombre} - Cantidad: ${item.cantidad} - $${subtotal.toLocaleString()}`;
-        lista.appendChild(li);
-      });
+        carrito.forEach(item => {
+            const li = document.createElement('li');
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            // Usar 'es-CL' para formato chileno (punto para miles, coma para decimales)
+            li.textContent = `${item.nombre} - Cantidad: ${item.cantidad} - $${subtotal.toLocaleString('es-CL')}`;
+            lista.appendChild(li);
+        });
 
-      let totalElem = document.getElementById('carrito-total');
-      if (!totalElem) {
-        totalElem = document.createElement('div');
-        totalElem.id = 'carrito-total';
-        document.getElementById('carrito').appendChild(totalElem);
-      }
-      totalElem.textContent = `Total: $${total.toLocaleString()}`;
+        let totalElem = document.getElementById('carrito-total');
+        if (!totalElem) {
+            totalElem = document.createElement('div');
+            totalElem.id = 'carrito-total';
+            document.getElementById('carrito').appendChild(totalElem);
+        }
+        totalElem.textContent = `Total: $${total.toLocaleString('es-CL')}`;
     }
-  </script>
+</script>
 {% endblock %}

@@ -264,7 +264,7 @@ nav ul.menu li.submenu ul li a:hover {
 
 .producto img {
     width: 100%;
-    max-height: 10px;      /* límite similar para consistencia */
+    max-height: 140px;      /* límite similar para consistencia */
     object-fit: cover;
     border-radius: 8px;
 }

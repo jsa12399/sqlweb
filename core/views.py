@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, get_user_model
+from .models import Producto  # ¡Asegúrate de agregar esta línea para importar Producto!
 
 User = get_user_model()
 
@@ -40,4 +41,13 @@ def register_view(request):
     return render(request, 'core/register.html')
 
 def ver_productos(request):
-    return render(request, 'core/productos.html')
+    # Obtener todos los productos de la base de datos
+    productos = Producto.objects.all()
+
+    # Crear un diccionario de contexto para pasar los productos a la plantilla
+    context = {
+        'productos': productos
+    }
+
+    # Renderizar la plantilla 'productos.html' y pasar el contexto
+    return render(request, 'core/productos.html', context)
