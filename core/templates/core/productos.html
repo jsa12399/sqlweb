@@ -19,6 +19,8 @@
           <img src="{% static 'core/img/mancuernas.jpg' %}" alt="{{ producto.nombre }}">
       {% elif "Creatina" in producto.nombre %}
           <img src="{% static 'core/img/creatina.jpg' %}" alt="{{ producto.nombre }}">
+      {% elif "Banda" in producto.nombre %}
+          <img src="{% static 'core/img/banda_de_resistencia.jpg' %}" alt="{{ producto.nombre }}">
       {% else %}
           {# Considera tener una imagen por defecto (default.jpg) si agregas más productos #}
           <img src="{% static 'core/img/default.jpg' %}" alt="{{ producto.nombre }}">

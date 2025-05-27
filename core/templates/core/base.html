@@ -14,15 +14,19 @@
                 
                 <li><a href="{% url 'index' %}">Inicio</a></li>
                 <li class="submenu">
-                    <a href="#">Servicios</a>
-                    <ul>
+                    <a href="#">Servicios</a> <ul>
                         
                         <li><a href="{% url 'nutricionista' %}">Nutricionista</a></li>
                         <li><a href="{% url 'preparadorfisico' %}">Preparador físico</a></li>
 
                     </ul>
                 </li>
-                <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
+                <li><a href="{% url 'productos' %}">Productos</a></li> {% if user.is_authenticated %}
+                    <li><a href="{% url 'logout' %}">Cerrar sesión ({{ user.email }})</a></li>
+                {% else %}
+                    <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
+                    <li><a href="{% url 'register' %}">Registrarse</a></li>
+                {% endif %}
             </ul>
         </nav>
     </header>

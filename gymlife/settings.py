@@ -39,10 +39,34 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.humanize',
+    'django.contrib.humanize', # Ya lo tienes, ¡bien!
     'django.contrib.staticfiles',
-    'core', # Tu aplicación 'core'
+    'core', # Tu aplicación 'core' - ¡Esto es CRÍTICO!
 ]
+
+# ** ------------------- INICIO DE LAS LÍNEAS A AÑADIR/VERIFICAR ------------------- **
+
+# Configuración del modelo de usuario personalizado
+AUTH_USER_MODEL = 'core.Usuario' # ¡Esta línea es FUNDAMENTAL para usar tu modelo!
+
+# URLs a donde Django redirige para login/logout
+LOGIN_URL = '/iniciar-sesion/' 
+LOGIN_REDIRECT_URL = '/' # Después de iniciar sesión, va a la página de inicio
+LOGOUT_REDIRECT_URL = '/iniciar-sesion/' # Después de cerrar sesión, va a la página de login
+
+# Configuración de localización para números (Chile) - Ya las tienes abajo, pero las muevo aquí para agrupar
+LANGUAGE_CODE = 'es-cl'
+TIME_ZONE = 'America/Santiago'
+USE_I18N = True
+USE_L10N = True # USE_L10N es True para usar el formato local de números/fechas
+
+# Para el formato numérico chileno (punto para miles, coma para decimales)
+DECIMAL_SEPARATOR = ','
+THOUSAND_SEPARATOR = '.'
+USE_THOUSAND_SEPARATOR = True 
+
+# ** -------------------- FIN DE LAS LÍNEAS A AÑADIR/VERIFICAR -------------------- **
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -103,11 +127,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internacionalización
-LANGUAGE_CODE = 'es-cl'
-TIME_ZONE = 'America/Santiago'
-USE_I18N = True
-USE_TZ = True
+# Las movimos arriba para agrupar las configuraciones de localización, pero si las dejas aquí, también funcionarán.
+# LANGUAGE_CODE = 'es-cl'
+# TIME_ZONE = 'America/Santiago'
+# USE_I18N = True
+# USE_TZ = True 
 
 # Archivos estáticos (CSS, JS, imágenes)
 STATIC_URL = 'static/'

@@ -1,17 +1,26 @@
+{# Integracion_Proyecto/core/templates/core/login.html #}
+
 {% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
 {% block content %}
-<div class="auth-container">
+<div class="form-container">
     <h2>Iniciar Sesión</h2>
     <form method="post">
         {% csrf_token %}
-        <label for="email">Correo electrónico:</label>
-        <input type="email" id="email" name="email" required>
+        {% if error %}
+            <p style="color: red; font-weight: bold;">{{ error }}</p>
+        {% endif %}
+        <label for="id_email">Email:</label>
+        <input type="email" id="id_email" name="email" required>
 
-        <label for="password">Contraseña:</label>
-        <input type="password" id="password" name="password" required>
+        <label for="id_password">Contraseña:</label>
+        <input type="password" id="id_password" name="password" required>
 
-        <button type="submit">Iniciar sesión</button>
+        <button type="submit">Entrar</button>
     </form>
-    <p class="registro-link">¿No tienes cuenta? <a href="{% url 'register' %}">Regístrate</a></p>
+    <p>¿No tienes una cuenta? <a href="{% url 'register' %}">Regístrate aquí</a></p>
 </div>
 {% endblock %}
