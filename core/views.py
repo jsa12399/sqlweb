@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, get_user_model, logout # Importa 'logout'
 from django.contrib.auth.decorators import login_required # Importa el decorador para proteger vistas
 from .models import Producto, Comuna, TipoUsuario # Importa también estos modelos para el registro
+import requests
 
 # Obtiene tu modelo de usuario personalizado definido en settings.py
 User = get_user_model() 
@@ -117,3 +118,27 @@ def register_view(request):
 def custom_logout_view(request):
     logout(request) # Cierra la sesión del usuario
     return redirect('login') # Redirige a la página de login
+
+
+# APIS
+
+
+
+
+
+
+import requests
+from django.shortcuts import render
+
+def listar_clientes(request):
+    try:
+        url = "https://api-sabor-latino-chile.onrender.com/clientes"
+        response = requests.get(url)
+        response.raise_for_status()
+        clientes = response.json()
+    except requests.RequestException as e:
+        print("Error al conectar con la API:", e)
+        clientes = []
+
+    return render(request, 'core/clientes.html', {'clientes': clientes})
+

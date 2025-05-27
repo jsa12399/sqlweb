@@ -2,6 +2,7 @@
 
 from django.urls import path
 from . import views # Importa todas tus vistas desde el mismo directorio
+from .views import listar_clientes
 
 urlpatterns = [
     path('', views.index, name='index'), # Página de inicio
@@ -14,4 +15,5 @@ urlpatterns = [
     path('logout/', views.custom_logout_view, name='logout'), # ¡NUEVA RUTA para cerrar sesión!
     
     path('productos/', views.ver_productos, name='productos'), # Vista de productos
+    path('clientes/', listar_clientes, name='listar_clientes'),
 ]

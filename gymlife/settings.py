@@ -134,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # USE_TZ = True 
 
 # Archivos estáticos (CSS, JS, imágenes)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'core', 'static')]
 
 # Archivos multimedia (si usas imágenes cargadas por usuarios en el futuro)

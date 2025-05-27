@@ -1,0 +1,23 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Clientes desde API</title>
+</head>
+<body>
+    <h1>Listado de Clientes</h1>
+
+    <ul>
+        {% for cliente in clientes %}
+            <li>
+                Nombre: {{ cliente.nombre }} <br>
+                Teléfono: {{ cliente.telefono }}
+            </li>
+        {% empty %}
+            <li>No hay clientes disponibles.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
