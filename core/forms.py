@@ -1,28 +1,29 @@
 # Integracion_Proyecto/core/forms.py
 
 from django import forms
-from .models import Servicio # Asegúrate de que Servicio está importado
+from .models import Servicio, Usuario
 
 class ServicioForm(forms.ModelForm):
     class Meta:
         model = Servicio
-        # Incluye solo los campos que REALMENTE existen en tu modelo Servicio.
-        # Si 'duracion_servicio_minutos' no existe en tu modelo, LO ELIMINAMOS de aquí.
-        # id_proveedor_servicio es mejor que lo asignes en la vista (request.user).
         fields = [
             'nombre_servicio',
             'descripcion_servicio',
             'precio_servicio',
-            # 'id_proveedor_servicio', # Generalmente se asigna en la vista, no se pide al usuario
+            'duracion_minutos',
+            'disponible',
         ]
-        # Si quieres excluir campos explícitamente:
-        # exclude = ['id_servicio', 'id_proveedor_servicio', 'duracion_servicio_minutos'] # Ejemplo
         labels = {
             'nombre_servicio': 'Nombre del Servicio',
             'descripcion_servicio': 'Descripción',
-            'precio_servicio': 'Precio',
-            # 'id_proveedor_servicio': 'Proveedor del Servicio',
+            'precio_servicio': 'Precio ($)',
+            'duracion_minutos': 'Duración (minutos)',
+            'disponible': '¿Está disponible?',
         }
         widgets = {
-            'descripcion_servicio': forms.Textarea(attrs={'rows': 4}),
+            'descripcion_servicio': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe brevemente tu servicio'}),
+            'precio_servicio': forms.NumberInput(attrs={'placeholder': 'Ej: 25000.00'}),
+            'duracion_minutos': forms.NumberInput(attrs={'placeholder': 'Ej: 60'}),
+            # CAMBIO CRÍTICO AQUÍ: Ajusta estos valores para que coincidan con tu restricción de Oracle
+            'disponible': forms.RadioSelect(choices=[('S', 'Sí'), ('N', 'No')]), # <-- ¡Cambia '1' y '0' por 'S' y 'N'!
         }

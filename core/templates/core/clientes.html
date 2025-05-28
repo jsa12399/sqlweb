@@ -12,8 +12,8 @@
     <ul>
         {% for cliente in clientes %}
             <li>
-                Nombre: {{ cliente.nombre }} <br>
-                Rut: {{ cliente.rut }} <br>
+                Nombre: {{ cliente.primer_nombre}} <br>
+                Rut: {{ cliente.numero_rut }} <br>
                 Teléfono: {{ cliente.telefono }}
             </li>
         {% empty %}

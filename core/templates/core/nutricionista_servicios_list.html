@@ -1,0 +1,45 @@
+{% extends 'core/base_nutricionista.html' %}
+{% load static %}
+
+{% block title %}Mis Servicios{% endblock %}
+
+{% block content %}
+    <div class="content-section">
+        <h1 class="mb-4">Mis Servicios Ofertados</h1>
+
+        {# Botón para crear un nuevo servicio #}
+        <p><a href="{% url 'nutricionista_servicio_crear' %}" class="btn btn-primary mb-3">Crear Nuevo Servicio</a></p>
+
+        {% if mis_servicios %}
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Nombre del Servicio</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Duración (minutos)</th>
+                        <th>Disponible</th>
+                        {# Puedes agregar más columnas si deseas #}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for servicio in mis_servicios %}
+                        <tr>
+                            <td>{{ servicio.nombre_servicio }}</td>
+                            <td>{{ servicio.descripcion_servicio|default:"N/A" }}</td>
+                            <td>${{ servicio.precio_servicio|floatformat:2 }}</td>
+                            <td>{{ servicio.duracion_minutos|default:"N/A" }}</td>
+                            <td>
+                                {# ¡CAMBIA ESTA LÍNEA! #}
+                                {% if servicio.disponible == 'S' %}Sí{% else %}No{% endif %}
+                            </td>
+                            {# Puedes agregar botones para editar/eliminar aquí en el futuro #}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Aún no tienes servicios registrados. ¡Anímate a crear uno!</p>
+        {% endif %}
+    </div>
+{% endblock %}

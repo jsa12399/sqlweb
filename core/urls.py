@@ -25,4 +25,6 @@ urlpatterns = [
 
     # --- NUEVA RUTA PARA EL PANEL DE NUTRICIONISTA ---
     path('nutricionista/panel/', views.panel_nutricionista, name='panel_nutricionista'),
+    path('nutricionista/servicios/', views.nutricionista_servicios_list, name='nutricionista_servicios_list'),
+     path('nutricionista/servicios/crear/', views.nutricionista_servicio_crear, name='nutricionista_servicio_crear'),
 ]

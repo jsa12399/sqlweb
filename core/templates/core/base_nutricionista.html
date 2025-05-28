@@ -1,0 +1,37 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportFit - Panel Nutricionista</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    {# Puedes agregar CSS específico para el panel del nutricionista si lo necesitas #}
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav>
+            <ul class="menu">
+                {# Enlaces exclusivos para el Nutricionista #}
+                <li><a href="{% url 'panel_nutricionista' %}">Mi Panel</a></li>
+                <li><a href="{% url 'nutricionista_servicios_list' %}">Mis Servicios</a></li>
+                {# Aquí podrías agregar más enlaces específicos para el nutricionista (ej. "Gestionar Clientes", "Calendario de Citas") #}
+                
+                {# Siempre la opción de cerrar sesión para el usuario logueado #}
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'logout' %}">Cerrar sesión ({{ user.email }})</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 SportFit. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

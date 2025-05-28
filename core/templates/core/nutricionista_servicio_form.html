@@ -1,0 +1,32 @@
+{% extends 'core/base_nutricionista.html' %}
+{% load static %}
+
+{% block title %}Crear Servicio{% endblock %}
+
+{% block content %}
+    <div class="content-section">
+        <h1 class="mb-4">Crear Nuevo Servicio</h1>
+        <form method="post">
+            {% csrf_token %} {# ¡Siempre necesario para formularios POST en Django! #}
+            {# Mostrar errores del formulario si existen #}
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    Por favor, corrige los siguientes errores:
+                    <ul>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li><strong>{{ field|default:"General" }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {# Renderizar los campos del formulario #}
+            {{ form.as_p }}
+
+            <button type="submit" class="btn btn-primary mt-3">Guardar Servicio</button>
+        </form>
+        <p class="mt-4"><a href="{% url 'nutricionista_servicios_list' %}">Volver a Mis Servicios</a></p>
+    </div>
+{% endblock %}
