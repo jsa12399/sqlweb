@@ -1,0 +1,6 @@
+<h1>Mensaje de {{ mensaje.cliente.username }}</h1>
+<p><strong>Servicio:</strong> {{ mensaje.servicio.nombre }}</p>
+<p><strong>Mensaje:</strong></p>
+<p>{{ mensaje.mensaje }}</p>
+<p><strong>Enviado el:</strong> {{ mensaje.fecha_envio|date:"d/m/Y H:i" }}</p>
+<a href="{% url 'lista_mensajes' %}">Volver a mensajes</a>

@@ -1,0 +1,14 @@
+<h1>Mis Servicios</h1>
+<a href="{% url 'crear_servicio' %}">Crear Nuevo Servicio</a>
+<ul>
+  {% for servicio in servicios %}
+    <li>
+      <strong>{{ servicio.nombre }}</strong> - ${{ servicio.precio }} - {{ servicio.duracion_minutos }} minutos
+      <a href="{% url 'editar_servicio' servicio.pk %}">Editar</a> |
+      <a href="{% url 'eliminar_servicio' servicio.pk %}">Eliminar</a>
+    </li>
+  {% empty %}
+    <li>No tienes servicios creados.</li>
+  {% endfor %}
+</ul>
+<a href="{% url 'lista_mensajes' %}">Ver Mensajes</a>

@@ -1,0 +1,13 @@
+<h1>Mensajes recibidos</h1>
+<ul>
+  {% for mensaje in mensajes %}
+    <li>
+      <a href="{% url 'detalle_mensaje' mensaje.pk %}">
+        De: {{ mensaje.cliente.username }} para el servicio {{ mensaje.servicio.nombre }} - {{ mensaje.fecha_envio|date:"d/m/Y H:i" }} {% if not mensaje.leido %} <strong>(Nuevo)</strong>{% endif %}
+      </a>
+    </li>
+  {% empty %}
+    <li>No hay mensajes.</li>
+  {% endfor %}
+</ul>
+<a href="{% url 'lista_servicios' %}">Volver a servicios</a>

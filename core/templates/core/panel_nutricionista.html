@@ -1,201 +1,92 @@
+{# Integracion_Proyecto/core/templates/core/panel_nutricionista.html #}
+
 {% extends 'core/base_nutricionista.html' %}
 {% load static %}
 
-{% block title %}Panel de Nutricionista - SportFit{% endblock %}
+{% block title %}Panel de Nutricionista{% endblock %}
 
 {% block content %}
-<section class="panel-nutricionista-dashboard">
-    <div class="header-dashboard">
-        <h2>Bienvenido, Nutricionista {{ nutricionista.get_full_name }}</h2>
-        <p>Aquí puedes gestionar tus servicios, disponibilidad y clientes.</p>
-    </div>
+    <div class="content-section">
+        <h1 class="mb-4">Bienvenido, {{ nutricionista.get_full_name }}</h1>
+        <p class="lead">Este es tu panel de control como nutricionista.</p>
 
-    <div class="dashboard-sections">
-        <div class="dashboard-card">
-            <h3>Mis Servicios</h3>
-            <p>Gestiona la información de tus servicios de nutrición.</p>
-            <a href="#" class="btn-dashboard">Ver y Gestionar Servicios</a>
-        </div>
-
-        <div class="dashboard-card">
-            <h3>Mi Disponibilidad</h3>
-            <p>Define y actualiza tus horarios para sesiones.</p>
-            <a href="#" class="btn-dashboard">Ver y Gestionar Disponibilidad</a>
-        </div>
-
-        <div class="dashboard-card">
-            <h3>Mis Clientes</h3>
-            <p>Revisa los clientes que han contratado tus servicios.</p>
-            <a href="#" class="btn-dashboard">Ver Clientes</a>
-        </div>
-
-        <div class="dashboard-info">
-            <h3>Servicios Publicados: {{ mis_servicios|length }}</h3>
-            <h3>Instancias Programadas: {{ mis_instancias|length }}</h3>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="card-title text-primary">Gestión de Servicios</h3>
+                        <p class="card-text">Administra los servicios que ofreces a tus clientes.</p>
+                        <a href="{% url 'nutricionista_servicios_list' %}" class="btn btn-info">Ver Mis Servicios</a>
+                        <a href="{% url 'nutricionista_servicio_crear' %}" class="btn btn-success ms-2">Crear Nuevo Servicio</a>
+                    </div>
+                </div>
             </div>
-    </div>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="card-title text-primary">Mis Instancias Programadas</h3>
+                        <p class="card-text">Consulta las sesiones de servicio que has programado.</p>
+                        {# Puedes añadir un enlace a una lista de instancias aquí #}
+                        {# Por ahora, solo muestra un conteo #}
+                        <p class="mt-3">Tienes **{{ mis_instancias.count }}** instancias de servicio programadas.</p>
+                        <a href="#" class="btn btn-info" disabled>Ver Instancias (Próximamente)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <hr style="margin: 3rem 0;">
+        <hr class="my-4">
 
-    <div class="recent-activity">
-        <h3>Actividad Reciente / Próximas Citas</h3>
-        {% if mis_instancias %}
-            <ul>
-                {% for instancia in mis_instancias|slice:":5" %} {# Muestra las 5 primeras #}
-                <li>
-                    <strong>Servicio:</strong> {{ instancia.id_servicio.nombre_servicio }} <br>
-                    <strong>Fecha/Hora:</strong> {{ instancia.fecha_hora_programada }} <br>
-                    <strong>Estado:</strong> {{ instancia.estado_instancia }} 
-                    {% if instancia.reservado == 'S' %} (Reservado){% else %} (Disponible){% endif %}
-                    {% comment %}
-                    Asegúrate de que InstanciaServicio tenga un ForeignKey a Usuario para id_cliente
-                    Si id_cliente no existe directamente en InstanciaServicio, esta línea dará error.
-                    Puedes comentarla o ajustar según tu modelo.
-                    {% endcomment %}
-                    {% if instancia.id_cliente %}
-                        - Cliente: {{ instancia.id_cliente.get_full_name }}
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-            {% if mis_instancias|length > 5 %}
-                <p><a href="#">Ver todas las citas</a></p>
-            {% endif %}
+        {# ¡NUEVA SECCIÓN: SERVICIOS ADQUIRIDOS POR CLIENTES! #}
+        <h2 class="mb-4 text-success">Servicios Adquiridos por tus Clientes</h2>
+        {% if servicios_adquiridos_por_clientes %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Email Cliente</th>
+                            <th>Servicio Adquirido</th>
+                            <th>Fecha Adquisición</th>
+                            <th>Estado Adquisición</th>
+                            <th>Fecha Instancia Programada</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for adquisicion in servicios_adquiridos_por_clientes %}
+                            <tr>
+                                <td>{{ adquisicion.id_cliente.get_full_name }}</td>
+                                <td>{{ adquisicion.id_cliente.email }}</td>
+                                <td>{{ adquisicion.id_instancia_servicio.id_servicio.nombre_servicio }}</td>
+                                <td>{{ adquisicion.fecha_adquisicion|date:"d M Y H:i" }}</td>
+                                <td><span class="badge 
+                                    {% if adquisicion.estado_adquisicion == 'Confirmado' %}bg-success
+                                    {% elif adquisicion.estado_adquisicion == 'Pendiente' %}bg-warning text-dark
+                                    {% elif adquisicion.estado_adquisicion == 'Rechazado' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">{{ adquisicion.estado_adquisicion }}</span>
+                                </td>
+                                <td>
+                                    {% if adquisicion.id_instancia_servicio.fecha_hora_programada %}
+                                        {{ adquisicion.id_instancia_servicio.fecha_hora_programada|date:"d M Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Pendiente de programación</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {# Aquí el nutricionista podría tener acciones como: #}
+                                    {# - Programar Instancia (si fecha_hora_programada es null) #}
+                                    {# - Confirmar/Rechazar Adquisición #}
+                                    {# - Ver Detalles del Cliente #}
+                                    <a href="#" class="btn btn-sm btn-outline-primary" disabled>Gestionar</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         {% else %}
-            <p>No tienes citas programadas o servicios activos.</p>
+            <p class="alert alert-info">Todavía no hay clientes que hayan adquirido tus servicios.</p>
         {% endif %}
     </div>
-
-</section>
-
-<style>
-    .panel-nutricionista-dashboard {
-        padding: 2rem;
-        max-width: 1200px;
-        margin: 2rem auto;
-        background-color: #f8f9fa;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        color: #333;
-    }
-
-    .header-dashboard {
-        text-align: center;
-        margin-bottom: 3rem;
-        color: #1e3a8a;
-    }
-
-    .header-dashboard h2 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .header-dashboard p {
-        font-size: 1.1rem;
-        color: #555;
-    }
-
-    .dashboard-sections {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 25px;
-        margin-bottom: 3rem;
-    }
-
-    .dashboard-card {
-        background-color: #ffffff;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        text-align: center;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .dashboard-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.12);
-    }
-
-    .dashboard-card h3 {
-        color: #0056b3;
-        font-size: 1.8rem;
-        margin-bottom: 1rem;
-    }
-
-    .dashboard-card p {
-        font-size: 1rem;
-        color: #666;
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-dashboard {
-        display: inline-block;
-        background-color: #007bff;
-        color: white;
-        padding: 12px 25px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-
-    .btn-dashboard:hover {
-        background-color: #0056b3;
-        transform: scale(1.02);
-    }
-
-    .dashboard-info {
-        background-color: #e9ecef;
-        padding: 1.5rem;
-        border-radius: 8px;
-        text-align: center;
-        grid-column: 1 / -1; 
-        margin-top: 2rem;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .dashboard-info h3 {
-        color: #1e3a8a;
-        margin-bottom: 1rem;
-    }
-
-    .dashboard-info p {
-        font-size: 1.1rem;
-        color: #444;
-    }
-
-    .recent-activity {
-        background-color: #ffffff;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-top: 2rem;
-    }
-
-    .recent-activity h3 {
-        color: #0056b3;
-        margin-bottom: 1.5rem;
-        font-size: 1.8rem;
-    }
-
-    .recent-activity ul {
-        list-style: none;
-        padding: 0;
-    }
-
-    .recent-activity li {
-        background-color: #f0f8ff;
-        border: 1px solid #cce5ff;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: #333;
-    }
-
-    .recent-activity li strong {
-        color: #1e3a8a;
-    }
-</style>
 {% endblock %}

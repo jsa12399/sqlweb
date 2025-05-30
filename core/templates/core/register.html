@@ -8,8 +8,12 @@
     <h2>Registrarse</h2>
     <form method="post" onsubmit="return validarFormulario()">
         {% csrf_token %}
-        {% if error %}
-            <p style="color: red; font-weight: bold;">{{ error }}</p>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
         {% endif %}
 
         <label for="id_nombre">Nombre:</label>
@@ -18,7 +22,7 @@
         <label for="id_apellido">Apellido:</label>
         <input type="text" id="id_apellido" name="apellido" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,50}" title="Solo letras y espacios, mínimo 2 caracteres" required>
 
-        <label for="id_rut">RUT:</label>
+        <label for="id_rut">RUT (sin puntos, con guion y dígito verificador):</label>
         <input type="text" id="id_rut" name="rut" pattern="^\d{7,8}-[\dkK]$" title="Formato válido: 12345678-9 o 12345678-K" required>
 
         <label for="id_email">Email:</label>
@@ -35,6 +39,22 @@
 
         <label for="id_direccion">Dirección (opcional):</label>
         <input type="text" id="id_direccion" name="direccion" maxlength="100">
+
+        <label for="id_comuna">Comuna:</label>
+        <select id="id_comuna" name="comuna_id" required>
+            <option value="">Seleccione una comuna</option>
+            {% for comuna in comunas %}
+                <option value="{{ comuna.id_comuna }}">{{ comuna.nombre }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="id_tipo_usuario">Tipo de Usuario:</label>
+        <select id="id_tipo_usuario" name="tipo_usuario_id" required>
+            <option value="">Seleccione un tipo de usuario</option>
+            {% for tipo in tipos_usuario %}
+                <option value="{{ tipo.id_tipo_usuario }}">{{ tipo.tipo_usuario }}</option>
+            {% endfor %}
+        </select>
 
         <button type="submit">Registrarse</button>
     </form>
@@ -53,6 +73,9 @@ function validarFormulario() {
         alert("Las contraseñas no coinciden.");
         return false;
     }
+
+    // Puedes añadir más validaciones del lado del cliente aquí si es necesario
+    // Por ejemplo, para el formato del RUT o del correo electrónico
 
     return true;
 }

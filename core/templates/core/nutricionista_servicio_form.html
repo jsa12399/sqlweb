@@ -1,32 +1,47 @@
+{# Integracion_Proyecto/core/templates/core/nutricionista_servicio_form.html #}
+
 {% extends 'core/base_nutricionista.html' %}
 {% load static %}
 
-{% block title %}Crear Servicio{% endblock %}
+{% block title %}
+    {% if servicio %}Editar Servicio{% else %}Crear Nuevo Servicio{% endif %}
+{% endblock %}
 
 {% block content %}
     <div class="content-section">
-        <h1 class="mb-4">Crear Nuevo Servicio</h1>
-        <form method="post">
-            {% csrf_token %} {# ¡Siempre necesario para formularios POST en Django! #}
-            {# Mostrar errores del formulario si existen #}
-            {% if form.errors %}
+        <h1 class="mb-4">{% if servicio %}Editar Servicio{% else %}Crear Nuevo Servicio{% endif %}</h1>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
                 <div class="alert alert-danger" role="alert">
-                    Por favor, corrige los siguientes errores:
-                    <ul>
-                        {% for field, errors in form.errors.items %}
-                            {% for error in errors %}
-                                <li><strong>{{ field|default:"General" }}:</strong> {{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
                 </div>
             {% endif %}
 
-            {# Renderizar los campos del formulario #}
-            {{ form.as_p }}
+            {# Aquí es donde se renderizan los campos uno por uno con clases de Bootstrap #}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    {{ field }} {# Esto renderiza el input/select/textarea del campo #}
+                    
+                    {% if field.help_text %}
+                        <div class="form-text text-muted">{{ field.help_text }}</div>
+                    {% endif %}
+                    
+                    {% for error in field.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
 
-            <button type="submit" class="btn btn-primary mt-3">Guardar Servicio</button>
+            <button type="submit" class="btn btn-primary">
+                {% if servicio %}Guardar Cambios{% else %}Crear Servicio{% endif %}
+            </button>
+            <a href="{% url 'nutricionista_servicios_list' %}" class="btn btn-secondary">Cancelar</a>
         </form>
-        <p class="mt-4"><a href="{% url 'nutricionista_servicios_list' %}">Volver a Mis Servicios</a></p>
     </div>
 {% endblock %}

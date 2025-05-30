@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>SportFit</title>
-    {% load static %}
+    {# Solo necesitas un {% load static %} al principio del archivo #}
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
@@ -12,17 +12,29 @@
     <header>
         <nav>
             <ul class="menu">
-                
                 <li><a href="{% url 'index' %}">Inicio</a></li>
                 <li class="submenu">
-                    <a href="#">Servicios</a> <ul>
-                        
+                    <a href="#">Servicios</a>
+                    <ul>
                         <li><a href="{% url 'nutricionista' %}">Nutricionista</a></li>
                         <li><a href="{% url 'preparadorfisico' %}">Preparador físico</a></li>
-
                     </ul>
                 </li>
-                <li><a href="{% url 'productos' %}">Productos</a></li> {% if user.is_authenticated %}
+                <li><a href="{% url 'productos' %}">Productos</a></li>
+                
+                {# AQUI ES DONDE AÑADIREMOS EL ENLACE AL CARRITO #}
+                <li class="nav-item-carrito"> {# Puedes usar una clase para estilos específicos #}
+                    <a href="{% url 'carrito' %}" class="carrito-link">
+                        🛒 Carrito <span id="carrito-contador">(0)</span>
+                    </a>
+                </li>
+
+                {% if user.is_authenticated %}
+                    {# Si tienes lógica para roles, puedes añadirla aquí dentro del li #}
+                    {# Por ejemplo, si usas los test que definiste en views.py, podrías hacer esto (requiere un custom tag o filtro) #}
+                    {# {% if user|is_nutricionista %} #}
+                    {#     <li><a href="{% url 'panel_nutricionista' %}">Panel Nutricionista</a></li> #}
+                    {# {% endif %} #}
                     <li><a href="{% url 'logout' %}">Cerrar sesión ({{ user.email }})</a></li>
                 {% else %}
                     <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
@@ -33,5 +45,38 @@
     </header>
 
     {% block content %}{% endblock %}
+
+    {# SCRIPT PARA EL CONTADOR DEL CARRITO - Colócalo antes de </body> para que el DOM esté cargado #}
+    <script>
+        function getCarritoCount() {
+            const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            let totalItems = 0;
+            carrito.forEach(item => {
+                totalItems += item.cantidad;
+            });
+            return totalItems;
+        }
+
+        function updateCarritoCounter() {
+            const contadorElement = document.getElementById('carrito-contador');
+            if (contadorElement) {
+                contadorElement.textContent = `(${getCarritoCount()})`;
+            }
+        }
+
+        // Se ejecuta cuando el DOM está completamente cargado
+        document.addEventListener('DOMContentLoaded', updateCarritoCounter);
+
+        // Opcional: Si los productos se añaden a la página de productos (productos.html) y quieres
+        // que el contador en el navbar (base.html) se actualice sin recargar la página,
+        // puedes despachar un evento personalizado desde productos.html
+        // y escucharlo aquí.
+        // Ejemplo en productos.html después de localStorage.setItem:
+        // window.dispatchEvent(new Event('carritoActualizado'));
+        // Y aquí en base.html:
+        // window.addEventListener('carritoActualizado', updateCarritoCounter);
+        // Para tu configuración actual con localStorage, esto no es estrictamente necesario
+        // porque el contador se actualizará cada vez que se carga una nueva página.
+    </script>
 </body>
 </html>

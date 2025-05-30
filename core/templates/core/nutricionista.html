@@ -1,36 +1,150 @@
+{# core/nutricionista.html #}
+
+
 {% extends 'core/base.html' %}
 {% load static %}
+{% load user_tags %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/nutricionista.css' %}">
-{% endblock %}
 
 {% block content %}
-<section class="servicio-nutricionista" style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center;">
-    <img src="{% static 'core/img/nutricionista.jpg' %}" alt="Nutricionista" style="width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-    <div style="max-width: 450px;">
-        <h2>Servicio de Nutricionista</h2>
-        <p>Ofrecemos asesoramiento nutricional personalizado para mejorar tu salud y alcanzar tus objetivos físicos.</p>
-        <button onclick="document.getElementById('formulario').style.display='block'">Inscribirse</button>
 
-        <div id="formulario" style="display: none; margin-top: 20px;">
-            <h3>Precios y Registro</h3>
-            <p>Plan mensual: $30.000 CLP<br>Plan trimestral: $85.000 CLP</p>
-            <form method="post">
-                {% csrf_token %}
-                <label>Nombre: <input type="text" name="nombre" required></label><br>
-                <label>Apellido: <input type="text" name="apellido" required></label><br>
-                <label>Edad: <input type="number" name="edad" min="0" required></label><br>
-                <label>RUT: <input type="text" name="rut" required></label><br>
-                <label>Teléfono: <input type="text" name="telefono" required></label><br>
-                <label>Correo: <input type="email" name="correo" required></label><br>
-                <button type="submit">Enviar</button>
-            </form>
+<style>
+    /* core/static/core/css/nutricionista.css */
+
+/* Estilos generales para el contenedor principal */
+.container.mt-5 {
+    padding-top: 3rem; /* Espacio extra en la parte superior */
+    padding-bottom: 3rem; /* Espacio extra en la parte inferior */
+}
+
+h1, h2 {
+    color: #2c3e50; /* Un color oscuro para los títulos */
+    margin-bottom: 1.5rem;
+    font-weight: 700; /* Negrita para los títulos */
+    text-align: center; /* Centrar títulos */
+}
+
+p {
+    color: #555;
+    line-height: 1.6;
+}
+
+hr {
+    border-top: 2px solid #e0e0e0;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Estilos para las tarjetas de servicio */
+.card {
+    border: 1px solid #ddd;
+    border-radius: 10px; /* Bordes redondeados */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transición suave al pasar el mouse */
+    background-color: #ffffff; /* Fondo blanco */
+}
+
+.card:hover {
+    transform: translateY(-5px); /* Pequeño levantamiento al pasar el mouse */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+}
+
+.card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribuye el contenido verticalmente */
+}
+
+.card-title {
+    color: #3498db; /* Azul para el título del servicio */
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.card-text {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.card-text strong {
+    color: #333;
+}
+
+/* Estilo para el botón de adquirir servicio */
+.btn-primary {
+    background-color: #28a745; /* Un verde vibrante para "Adquirir" */
+    border-color: #28a745;
+    font-weight: 600;
+    margin-top: 1rem; /* Espacio superior para el botón */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #218838; /* Verde un poco más oscuro al pasar el mouse */
+    border-color: #1e7e34;
+}
+
+/* Mensajes de texto deshabilitados */
+.text-muted {
+    font-size: 0.85rem;
+    color: #888 !important; /* Asegura que el color sea gris */
+    margin-top: 1rem;
+}
+
+/* Responsive adjustments (optional, but good practice for Bootstrap) */
+@media (max-width: 768px) {
+    .col-md-4 {
+        margin-bottom: 1.5rem; /* Ajuste el margen inferior en pantallas pequeñas */
+    }
+}
+</style>
+<div class="container mt-5">
+    
+    <h1>Nuestros Servicios de Nutrición</h1>
+    <p>Descubre los planes y servicios ofrecidos por nuestros profesionales de la nutrición.</p>
+
+    <hr>
+
+    <h2>Servicios Disponibles:</h2>
+    {% if servicios_nutricionista %}
+        <div class="row">
+            {% for servicio in servicios_nutricionista %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ servicio.nombre_servicio }}</h5>
+                            <p class="card-text">{{ servicio.descripcion_servicio }}</p>
+                            <p class="card-text"><strong>Ofrecido por:</strong> 
+                                {% if servicio.id_proveedor_servicio %}
+                                    {{ servicio.id_proveedor_servicio.nombre }} {{ servicio.id_proveedor_servicio.apellido }}
+                                {% else %}
+                                    Nutricionista Desconocido
+                                {% endif %}
+                            </p>
+                            <p class="card-text"><strong>Precio:</strong> ${{ servicio.precio_servicio|floatformat:0 }}</p>
+                            <p class="card-text"><strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos</p>
+                            
+                            {# Botón para adquirir el servicio #}
+                            {% if request.user.is_authenticated and request.user|is_cliente %}
+                                <form action="{% url 'cliente_adquirir_servicio' servicio.id_servicio %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">Adquirir Servicio</button>
+                                </form>
+                            {% elif not request.user.is_authenticated %}
+                                <p class="text-muted">Inicia sesión como cliente para adquirir servicios.</p>
+                            {% else %}
+                                <p class="text-muted">No puedes adquirir servicios con tu rol actual.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-    </div>
-</section>
-
-<script>
-    // Puedes agregar un poco de JS para animar o mejorar la experiencia si quieres
-</script>
+    {% else %}
+        <p>No hay servicios de nutrición disponibles en este momento.</p>
+    {% endif %}
+</div>
 {% endblock %}

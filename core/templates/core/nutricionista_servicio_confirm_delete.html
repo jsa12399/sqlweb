@@ -1,0 +1,20 @@
+{# Integracion_Proyecto/core/templates/core/nutricionista_servicio_confirm_delete.html #}
+
+{% extends 'core/base_nutricionista.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+    <div class="content-section">
+        <h1 class="mb-4 text-danger">Confirmar Eliminación de Servicio</h1>
+        <p class="lead">¿Estás seguro de que quieres eliminar el servicio "<strong>{{ servicio.nombre_servicio }}</strong>"?</p>
+        <p class="text-muted">Esta acción no se puede deshacer.</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger me-2">Sí, Eliminar</button>
+            <a href="{% url 'nutricionista_servicios_list' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+{% endblock %}

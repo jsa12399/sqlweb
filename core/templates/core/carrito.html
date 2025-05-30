@@ -1,0 +1,94 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Carrito de Compras{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .cart-item-type {
+            font-size: 0.8em;
+            color: #777;
+            margin-left: 5px;
+        }
+    </style>
+{% endblock extra_css %} {# <-- ¡ASEGÚRATE DE QUE ESTA LÍNEA ESTÁ AQUÍ! #}
+
+{% block content %}
+    <h1 style="text-align: center; margin-top: 2rem; color: #1e3a8a;">Tu Carrito de Compras</h1>
+
+    <div id="carrito-display" style="max-width: 800px; margin: 2rem auto; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+        <ul id="carrito-lista" style="list-style: none; padding: 0;">
+            {# Los ítems del carrito se cargarán aquí con JavaScript #}
+        </ul>
+        <div id="carrito-total" style="font-size: 1.2rem; font-weight: bold; margin-top: 1rem; text-align: right;">
+            {# El total se cargará aquí con JavaScript #}
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+            <button id="limpiar-carrito-btn" style="padding: 0.8rem 1.5rem; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem;">Vaciar Carrito</button>
+            <button id="continuar-comprando-btn" 
+                    data-productos-url="{% url 'productos' %}" 
+                    style="padding: 0.8rem 1.5rem; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem;">
+                Continuar Comprando
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let carritoGlobal = [];
+
+        function actualizarCarritoDisplay() {
+            const lista = document.getElementById('carrito-lista');
+            const totalElem = document.getElementById('carrito-total');
+            
+            let total = 0;
+            lista.innerHTML = ''; 
+            carritoGlobal = JSON.parse(localStorage.getItem('carrito')) || [];
+
+            if (carritoGlobal.length === 0) {
+                lista.innerHTML = '<p>Tu carrito está vacío.</p>';
+                totalElem.textContent = 'Total: $0';
+                return;
+            }
+
+            carritoGlobal.forEach(item => {
+                const li = document.createElement('li');
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                li.style.cssText = "display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #eee;";
+                li.innerHTML = `
+                    <span>
+                        ${item.nombre} (x${item.cantidad}) 
+                        <span class="cart-item-type">(${item.type === 'producto' ? 'Producto' : 'Servicio'})</span>
+                    </span>
+                    <span>$${subtotal.toLocaleString('es-CL')}</span>
+                `;
+                lista.appendChild(li);
+            });
+
+            totalElem.textContent = `Total: $${total.toLocaleString('es-CL')}`;
+        }
+
+        document.getElementById('limpiar-carrito-btn').addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+                localStorage.removeItem('carrito');
+                actualizarCarritoDisplay(); 
+                window.dispatchEvent(new Event('carritoUpdated'));
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarCarritoDisplay(); 
+
+            const continuarComprandoBtn = document.getElementById('continuar-comprando-btn');
+            if (continuarComprandoBtn) { 
+                const productosUrl = continuarComprandoBtn.dataset.productosUrl; 
+                
+                continuarComprandoBtn.addEventListener('click', () => {
+                    window.location.href = productosUrl; 
+                });
+            }
+        });
+    </script>
+{% endblock content %} 

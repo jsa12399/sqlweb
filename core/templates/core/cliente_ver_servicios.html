@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Servicios Disponibles{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Servicios Disponibles</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        {% for servicio in servicios_disponibles %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ servicio.nombre_servicio }}</h5>
+                    <p class="card-text">{{ servicio.descripcion_servicio }}</p>
+                    <p class="card-text"><strong>Precio: ${{ servicio.precio_servicio|floatformat:0 }}</strong></p>
+                    <p class="card-text">Proveedor: {{ servicio.id_proveedor_servicio.nombre }} {{ servicio.id_proveedor_servicio.apellido }}</p>
+                    <button class="btn btn-primary anadir-carrito-btn"
+                            data-item-id="{{ servicio.id_servicio }}"
+                            data-item-nombre="{{ servicio.nombre_servicio }}"
+                            data-item-precio="{{ servicio.precio_servicio|floatformat:-2 }}" {# float para JS #}
+                            data-item-type="servicio"> {# Indica que es un servicio #}
+                        Añadir al Carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p>No hay servicios disponibles en este momento.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const botonesAnadir = document.querySelectorAll('.anadir-carrito-btn');
+
+        botonesAnadir.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                const itemNombre = this.dataset.itemNombre;
+                const itemPrecio = parseFloat(this.dataset.itemPrecio);
+                const itemType = this.dataset.itemType; // 'servicio' o 'producto'
+
+                let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                let itemExistente = carrito.find(item => item.id == itemId && item.type == itemType);
+
+                if (itemExistente) {
+                    itemExistente.cantidad += 1;
+                    alert(`Cantidad de "${itemNombre}" actualizada en el carrito.`);
+                } else {
+                    carrito.push({
+                        id: itemId,
+                        nombre: itemNombre,
+                        precio: itemPrecio,
+                        type: itemType,
+                        cantidad: 1
+                    });
+                    alert(`"${itemNombre}" añadido al carrito.`);
+                }
+
+                localStorage.setItem('carrito', JSON.stringify(carrito));
+                // Opcional: Si tienes un contador en la barra de navegación, puedes actualizarlo aquí.
+                // Por ejemplo, disparando un evento personalizado que el JS de tu base.html escuche.
+                window.dispatchEvent(new Event('carritoUpdated'));
+            });
+        });
+    });
+</script>
+{% endblock %}
