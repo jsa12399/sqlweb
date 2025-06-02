@@ -18,7 +18,7 @@
                 </tr>
             </thead>
             <tbody id="checkout-items-table-body">
-                </tbody>
+            </tbody>
         </table>
         <p>Subtotal: <span id="checkout-subtotal-display"></span></p>
         <p>Descuento: <span id="checkout-discount-display"></span></p>
@@ -28,7 +28,7 @@
         <p class="alert alert-info">Tu carrito está vacío. <a href="{% url 'productos' %}">Ver productos</a> o <a href="{% url 'cliente_ver_servicios' %}">ver servicios</a>.</p>
     </div>
     <div id="paypal-button-container" class="mt-3">
-        </div>
+    </div>
     <div class="mt-3">
         <a href="{% url 'carrito' %}" class="btn btn-secondary">Volver al carrito</a>
     </div>
@@ -36,7 +36,6 @@
 {% endblock %}
 
 {% block extra_js %}
-    {# CAMBIO: Asegúrate de que currency sea USD aquí #}
     <script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
     <script>
         const isAuthenticated = '{{ user.is_authenticated|yesno:"true,false" }}' === 'true';
@@ -55,7 +54,7 @@
             let finalTotal = 0;
 
             function formatCurrency(value) {
-                // Sigue formateando para CLP en la UI si quieres, esto solo afecta la visualización
+                // Formateo para CLP en la UI
                 return `$${value.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
             }
 
@@ -152,7 +151,7 @@
                             purchase_units: [{
                                 amount: {
                                     value: amount.toFixed(2),
-                                    currency_code: 'USD' // CAMBIO: Asegúrate de que currency_code sea 'USD'
+                                    currency_code: 'USD' // Debe ser USD para PayPal
                                 }
                             }]
                         });
@@ -174,17 +173,17 @@
             }
 
             function sendCartToBackend(cartData, paypalTransactionId) {
-    const csrftoken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('cart_data', JSON.stringify(cartData));
-    formData.append('payment_method_id', '1'); // Asumiendo que '1' es para PayPal
-    formData.append('paypal_transaction_id', paypalTransactionId);
-    formData.append('total_frontend', finalTotal.toFixed(2));
-    formData.append('payment_method', 'paypal');
+                const csrftoken = getCookie('csrftoken');
+                const formData = new FormData();
+                formData.append('cart_data', JSON.stringify(cartData));
+                formData.append('payment_method_id', '1'); // Asumiendo que '1' es para PayPal
+                formData.append('paypal_transaction_id', paypalTransactionId);
+                formData.append('total_frontend', finalTotal.toFixed(2));
+                formData.append('payment_method', 'paypal');
 
-    console.log('DEBUG FRONTEND: finalTotal enviado al backend:', finalTotal.toFixed(2)); // AGREGAR ESTA LÍNEA
+                console.log('DEBUG FRONTEND: finalTotal enviado al backend:', finalTotal.toFixed(2));
 
-    fetch('{% url "checkout" %}', {
+                fetch('{% url "checkout" %}', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrftoken,
@@ -207,7 +206,8 @@
                         if (typeof dispatchCarritoUpdatedEvent === 'function') {
                             dispatchCarritoUpdatedEvent();
                         }
-                        window.location.href = '{% url "pago_exitoso" %}';
+                        // --- ¡CAMBIO CRÍTICO AQUÍ! ---
+                        window.location.href = data.redirect_url; // Usa la URL proporcionada por el backend
                     } else {
                         alert('Error al finalizar la compra en el servidor: ' + (data.error || 'Mensaje de error no disponible.'));
                         console.error('Backend error:', data.error);

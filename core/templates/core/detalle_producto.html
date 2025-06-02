@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<h2>{{ producto.nombre }}</h2>
+<p>{{ producto.descripcion }}</p>
+<p>Precio: ${{ producto.precio_unitario }}</p>
+
+<h3>Comentarios y valoraciones:</h3>
+<div>
+    {% for c in comentarios %}
+        <div style="border-bottom:1px solid #ccc; padding:10px 0;">
+            <strong>{{ c.id_usuario.username }}</strong> - {{ c.fecha_comentario|date:"d M Y H:i" }}<br>
+            Valoración: {{ c.valoracion }} / 5<br>
+            {{ c.comentario }}
+        </div>
+    {% empty %}
+        <p>No hay comentarios aún.</p>
+    {% endfor %}
+</div>
+
+<h3>Deja tu comentario</h3>
+<form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Enviar</button>
+</form>
+{% endblock %}

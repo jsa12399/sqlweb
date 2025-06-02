@@ -4,7 +4,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings # ¡Importante: para settings.AUTH_USER_MODEL!
+
 from django.utils import timezone
+import datetime
 
 # --- CustomUserManager para tu modelo Usuario ---
 class CustomUserManager(BaseUserManager):
@@ -152,7 +154,7 @@ class TipoUsuario(models.Model):
 
 class Producto(models.Model):
     id_producto = models.BigIntegerField(primary_key=True, db_column='ID_PRODUCTO')
-    nombre = models.CharField(max_length=100, db_column='NOMBRE') # Asumo 'NOMBRE' para el producto
+    nombre = models.CharField(max_length=100, db_column='NOMBRE')
     descripcion = models.CharField(max_length=500, blank=True, null=True, db_column='DESCRIPCION')
     stock = models.BigIntegerField(db_column='STOCK')
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, db_column='PRECIO_UNITARIO')
@@ -177,14 +179,35 @@ class Categoria(models.Model):
 
 
 class ComentarioValoracionProducto(models.Model):
-    id_comentario_valoracion = models.BigIntegerField(primary_key=True, db_column='ID_COMENTARIO_VALORACION')
-    id_producto = models.ForeignKey('Producto', models.DO_NOTHING, db_column='ID_PRODUCTO')
-    id_usuario = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='ID_USUARIO') # Apunta a tu modelo Usuario
+    id_comentario_valoracion = models.BigAutoField(
+        db_column='ID_COMENTARIO_VALORACION', 
+        primary_key=True,
+    )
+    
+    id_producto = models.ForeignKey(
+        'Producto', 
+        on_delete=models.CASCADE, 
+        db_column='ID_PRODUCTO'
+    )
+    
+    id_usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        db_column='ID_USUARIO'
+    ) 
+    
     comentario = models.CharField(max_length=500, db_column='COMENTARIO')
-    valoracion = models.BigIntegerField(db_column='VALORACION')
-    fecha_comentario = models.DateField(db_column='FECHA_COMENTARIO')
+    valoracion = models.IntegerField(db_column='VALORACION')
+    
+    # *** CORRECCIÓN AQUÍ ***
+    # Usamos timezone.now para obtener la fecha y hora actual con zona horaria
+    fecha_comentario = models.DateTimeField(
+        db_column='FECHA_COMENTARIO', 
+        default=timezone.now, # <--- ¡CORREGIDO!
+    )
+
     class Meta:
-        managed = False
+        managed = False 
         db_table = 'COMENTARIO_VALORACION_PRODUCTO'
 
 class DetalleCompra(models.Model):
@@ -208,6 +231,7 @@ class DetalleServicioAdquirido(models.Model):
     fecha_hora_adquisicion = models.DateTimeField(db_column='FECHA_HORA_ADQUISICION', default=timezone.now) # Usa DateTimeField
     precio_pagado = models.DecimalField(max_digits=10, decimal_places=2, db_column='PRECIO_PAGADO')
     id_mp = models.ForeignKey('MetodosDePago', models.DO_NOTHING, db_column='ID_MP') # 'MetodosDePago' como string
+    id_venta_producto = models.ForeignKey('VentaProducto', models.DO_NOTHING, db_column='ID_VENTA_PRODUCTO', null=True, blank=True)
 
     class Meta:
         managed = False
@@ -219,7 +243,8 @@ class DetalleServicioAdquirido(models.Model):
 
 class Envio(models.Model):
     id_envio = models.BigIntegerField(primary_key=True, db_column='ID_ENVIO')
-    id_venta_producto = models.OneToOneField('VentaProducto', models.DO_NOTHING, db_column='ID_VENTA_PRODUCTO')
+    # *** IMPORTANTE: Añade related_name para fácil acceso desde VentaProducto ***
+    id_venta_producto = models.OneToOneField('VentaProducto', models.DO_NOTHING, db_column='ID_VENTA_PRODUCTO', related_name='envio_asociado')
     fecha_envio = models.DateField(db_column='FECHA_ENVIO')
     fecha_estimada_entrega = models.DateField(blank=True, null=True, db_column='FECHA_ESTIMADA_ENTREGA')
     fecha_entrega_real = models.DateField(blank=True, null=True, db_column='FECHA_ENTREGA_REAL')
@@ -227,9 +252,13 @@ class Envio(models.Model):
     codigo_rastreo = models.CharField(unique=True, max_length=100, blank=True, null=True, db_column='CODIGO_RASTREO')
     nombre_transportista = models.CharField(max_length=100, blank=True, null=True, db_column='NOMBRE_TRANSPORTISTA')
     costo_envio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, db_column='COSTO_ENVIO')
+
     class Meta:
         managed = False
         db_table = 'ENVIO'
+
+    def __str__(self):
+        return f"Envío {self.id_envio} para Venta {self.id_venta_producto.id_venta_producto}"
 
 class InstanciaServicio(models.Model):
     # Si tu secuencia de Oracle genera IDs grandes, BigAutoField es preferible
@@ -272,14 +301,17 @@ class Servicio(models.Model): # Este es el modelo SERVICIO CORRECTO
         return self.nombre_servicio
 
 class VentaProducto(models.Model):
-    # Asumo que ID_VENTA_PRODUCTO es el PK y es BigIntegerField en Oracle
     id_venta_producto = models.BigAutoField(primary_key=True, db_column='ID_VENTA_PRODUCTO')
-    id_cliente = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='ID_CLIENTE') # Apunta a tu modelo Usuario
-    # El related_name se mantiene para evitar conflictos en relaciones FK con el mismo modelo.
+    id_cliente = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='ID_CLIENTE')
     id_empleado = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, db_column='ID_EMPLEADO', related_name='ventaproducto_id_empleado_set', blank=True, null=True)
-    fecha_venta = models.DateTimeField(db_column='FECHA_VENTA', default=timezone.now) # Usar DateTimeField para fecha y hora
+    fecha_venta = models.DateTimeField(db_column='FECHA_VENTA', default=timezone.now)
     total_venta = models.DecimalField(max_digits=10, decimal_places=2, db_column='TOTAL_VENTA')
-    id_mp = models.ForeignKey('MetodosDePago', models.DO_NOTHING, db_column='ID_MP') # 'MetodosDePago' como string
+    id_mp = models.ForeignKey('MetodosDePago', models.DO_NOTHING, db_column='ID_MP')
+
+    # --- ¡NUEVOS CAMPOS PARA EL SEGUIMIENTO! ---
+    numero_seguimiento = models.CharField(max_length=100, blank=True, null=True, db_column='NUMERO_SEGUIMIENTO', unique=True)
+    transportista = models.CharField(max_length=50, blank=True, null=True, db_column='TRANSPORTISTA')
+    # ------------------------------------------
 
     class Meta:
         managed = False
@@ -287,6 +319,7 @@ class VentaProducto(models.Model):
 
     def __str__(self):
         return f"Venta {self.id_venta_producto} - Total: {self.total_venta}"
+
 
 # MODELOS PARA SERVICIOS Y MENSAJES DEL PREPARADOR FÍSICO (Si aplican aparte)
 # El modelo Mensaje que tenías definido no parece estar mapeado a tu DB Oracle

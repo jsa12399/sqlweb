@@ -1,0 +1,145 @@
+{# core/templates/core/seguimiento_pedido.html #}
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Seguimiento de Pedido #{{ venta.id_venta_producto }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Seguimiento de Pedido #{{ venta.id_venta_producto }}</h1>
+    <hr>
+
+    {% if error_seguimiento %}
+    <div class="alert alert-warning" role="alert">
+        <strong>Error en el seguimiento:</strong> {{ error_seguimiento }}
+    </div>
+    {% endif %}
+
+    <h2>Detalles de la Venta</h2>
+    {% if venta %} {# Añadir este if por seguridad, aunque la vista debería asegurar que 'venta' exista #}
+    <p><strong>Fecha de Venta:</strong> {{ venta.fecha_venta|date:"d/m/Y H:i" }}</p>
+    <p><strong>Total de la Venta:</strong> ${{ venta.total_venta|floatformat:2 }}</p>
+    <p><strong>Método de Pago:</strong> {{ venta.id_mp.tipo_pago }}</p>
+    {# Ajusta esta línea según cómo accedas al nombre de usuario de tu id_cliente en VentaProducto #}
+    <p><strong>Cliente:</strong> {{ venta.id_cliente.username }}</p>
+    <hr>
+    {% else %}
+        <p>No se pudieron cargar los detalles de la venta.</p>
+    {% endif %}
+
+
+    <h2>Productos Comprados</h2>
+    {% if detalles_compra %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in detalles_compra %}
+            <tr>
+                <td>{{ detalle.id_producto.nombre_producto }}</td>
+                <td>{{ detalle.cantidad_adquirida }}</td>
+                <td>${{ detalle.precio_venta_unitario|floatformat:2 }}</td>
+                <td>${{ detalle.subtotal_detalle|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No hay productos físicos asociados a esta venta.</p>
+    {% endif %}
+    <hr>
+
+    <h2>Servicios Adquiridos</h2>
+    {% if detalles_servicios %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Servicio</th>
+                <th>Proveedor</th>
+                <th>Fecha de Adquisición</th>
+                <th>Precio Pagado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle_servicio in detalles_servicios %}
+            <tr>
+                <td>{{ detalle_servicio.id_instancia_servicio.id_servicio.nombre_servicio }}</td>
+                <td>{{ detalle_servicio.id_instancia_servicio.id_proveedor_servicio.nombre_proveedor }}</td>
+                <td>{{ detalle_servicio.fecha_hora_adquisicion|date:"d/m/Y H:i" }}</td>
+                <td>${{ detalle_servicio.precio_pagado|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No hay servicios asociados directamente a esta venta.</p>
+    {% endif %}
+    <hr>
+
+
+    <h2>Estado del Envío (interno)</h2>
+    {% if envio %}
+    <p><strong>Estado Actual:</strong> {{ envio.estado_envio }}</p>
+    <p><strong>Fecha de Envío:</strong> {{ envio.fecha_envio|date:"d/m/Y" }}</p>
+    {% if envio.fecha_estimada_entrega %}
+    <p><strong>Fecha Estimada de Entrega:</strong> {{ envio.fecha_estimada_entrega|date:"d/m/Y" }}</p>
+    {% endif %}
+    {% if envio.fecha_entrega_real %}
+    <p><strong>Fecha de Entrega Real:</strong> {{ envio.fecha_entrega_real|date:"d/m/Y" }}</p>
+    {% endif %}
+    {% if envio.nombre_transportista %}
+    <p><strong>Transportista (interno):</strong> {{ envio.nombre_transportista }}</p>
+    {% endif %}
+    {% if envio.codigo_rastreo %}
+    <p><strong>Código de Rastreo (interno):</strong> {{ envio.codigo_rastreo }}</p>
+    {% endif %}
+    <p><strong>Costo de Envío:</strong> ${{ envio.costo_envio|floatformat:2 }}</p>
+    {% else %}
+    <p>No se encontró un registro de envío para este pedido en nuestro sistema (puede ser una compra de solo servicios).</p>
+    {% endif %}
+    <hr>
+
+
+    <h2>Seguimiento de AfterShip (Información Externa)</h2>
+    {% if info_seguimiento %}
+        <p><strong>Estado del Rastreo:</strong> {{ info_seguimiento.tag }} ({{ info_seguimiento.subtag }})</p>
+        <p><strong>Última Actualización:</strong> {{ info_seguimiento.updated_at|date:"d/m/Y H:i" }}</p>
+        <p><strong>Transportista:</strong> {{ info_seguimiento.courier }}</p>
+        {% if info_seguimiento.expected_delivery_date %}
+        <p><strong>Fecha Estimada de Entrega (AfterShip):</strong> {{ info_seguimiento.expected_delivery_date|date:"d/m/Y" }}</p>
+        {% endif %}
+        {% if info_seguimiento.origin_country_alpha3 %}
+        <p><strong>Origen:</strong> {{ info_seguimiento.origin_country_alpha3 }}</p>
+        {% endif %}
+        {% if info_seguimiento.destination_country_alpha3 %}
+        <p><strong>Destino:</strong> {{ info_seguimiento.destination_country_alpha3 }}</p>
+        {% endif %}
+
+        {% if info_seguimiento.checkpoints %}
+            <h3>Historial de Movimientos:</h3>
+            <ul class="list-group">
+                {% for checkpoint in info_seguimiento.checkpoints reversed %} {# Muestra los más recientes primero #}
+                    <li class="list-group-item">
+                        <strong>{{ checkpoint.checkpoint_time|date:"d/m/Y H:i" }}</strong> -
+                        {{ checkpoint.message }}
+                        {% if checkpoint.location %}({{ checkpoint.location }}){% endif %}
+                        {% if checkpoint.country_name %}[{{ checkpoint.country_name }}]{% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No hay puntos de control disponibles de AfterShip.</p>
+        {% endif %}
+    {% else %}
+        <p>No se pudo obtener información de seguimiento detallada de AfterShip. Por favor, intente más tarde.</p>
+    {% endif %}
+
+    <p class="mt-4"><a href="{% url 'index' %}" class="btn btn-secondary">Volver al Inicio</a></p>
+</div>
+{% endblock %}

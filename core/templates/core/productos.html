@@ -8,27 +8,29 @@
     <h1 style="text-align: center; margin-top: 2rem; color: #1e3a8a;">Catálogo de Productos Fitness</h1>
 
     <div class="productos-lista">
-        {# ¡CAMBIA AQUÍ! Usa 'productos' (p minúscula) para que coincida con la vista #}
         {% for producto in productos %} 
         <div class="producto-card">
-            {# Aquí debes usar 'producto.nombre' como habíamos acordado, ya que 'nombre' es el atributo del modelo Producto #}
-            {% if "Proteína" in producto.nombre %} 
-                <img src="{% static 'core/img/proteina.jpg' %}" alt="{{ producto.nombre }}">
-            {% elif "Mancuernas" in producto.nombre %}
-                <img src="{% static 'core/img/mancuernas.jpg' %}" alt="{{ producto.nombre }}">
-            {% elif "Creatina" in producto.nombre %}
-                <img src="{% static 'core/img/creatina.jpg' %}" alt="{{ producto.nombre }}">
-            {% elif "Banda" in producto.nombre %}
-                <img src="{% static 'core/img/banda_de_resistencia.jpg' %}" alt="{{ producto.nombre }}">
-            {% else %}
-                <img src="{% static 'core/img/default.jpg' %}" alt="{{ producto.nombre }}">
-            {% endif %}
 
-            <h3>{{ producto.nombre }}</h3> 
+            <!-- Enlace a la página de detalle para imagen y nombre -->
+            <a href="{% url 'detalle_producto' producto.id_producto %}" style="text-decoration: none; color: inherit;">
+                {% if "Proteína" in producto.nombre %} 
+                    <img src="{% static 'core/img/proteina.jpg' %}" alt="{{ producto.nombre }}">
+                {% elif "Mancuernas" in producto.nombre %}
+                    <img src="{% static 'core/img/mancuernas.jpg' %}" alt="{{ producto.nombre }}">
+                {% elif "Creatina" in producto.nombre %}
+                    <img src="{% static 'core/img/creatina.jpg' %}" alt="{{ producto.nombre }}">
+                {% elif "Banda" in producto.nombre %}
+                    <img src="{% static 'core/img/banda_de_resistencia.jpg' %}" alt="{{ producto.nombre }}">
+                {% else %}
+                    <img src="{% static 'core/img/default.jpg' %}" alt="{{ producto.nombre }}">
+                {% endif %}
+                <h3>{{ producto.nombre }}</h3>
+            </a>
+
             <p>{{ producto.descripcion }}</p>
             <span>${{ producto.precio_unitario|intcomma }}</span>
 
-            <input type="number" min="1" value="1">
+            <input type="number" min="1" value="1" aria-label="Cantidad para {{ producto.nombre }}">
             <button class="add-to-cart-btn"
                     data-producto-id="{{ producto.id_producto }}"
                     data-item-type="producto">
@@ -41,7 +43,6 @@
     </div>
 
     <script>
-        // Tu código JavaScript está correcto y no necesita cambios.
         document.querySelectorAll('.add-to-cart-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const productoCard = button.closest('.producto-card');

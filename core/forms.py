@@ -1,7 +1,7 @@
 # Integracion_Proyecto/core/forms.py
 
 from django import forms
-from .models import Servicio, Usuario
+from .models import Servicio, Usuario, ComentarioValoracionProducto
 
 class ServicioForm(forms.ModelForm):
     class Meta:
@@ -27,3 +27,19 @@ class ServicioForm(forms.ModelForm):
             # CAMBIO CRÍTICO AQUÍ: Ajusta estos valores para que coincidan con tu restricción de Oracle
             'disponible': forms.RadioSelect(choices=[('S', 'Sí'), ('N', 'No')]), # <-- ¡Cambia '1' y '0' por 'S' y 'N'!
         }
+
+
+class ComentarioValoracionForm(forms.ModelForm):
+    class Meta:
+        model = ComentarioValoracionProducto
+        fields = ['comentario', 'valoracion'] 
+
+
+# core/forms.py
+from django import forms
+from .models import Envio
+
+class ActualizarEstadoEnvioForm(forms.ModelForm):
+    class Meta:
+        model = Envio
+        fields = ['estado_envio', 'codigo_rastreo', 'nombre_transportista']

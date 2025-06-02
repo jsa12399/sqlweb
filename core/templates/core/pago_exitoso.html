@@ -12,7 +12,17 @@
         <hr>
         <p class="mb-0">Gracias por preferir nuestros servicios y productos.</p>
     </div>
+
+    {% if venta %}
+        <p class="mt-4">Tu número de pedido es: <strong>#{{ venta.id_venta_producto }}</strong></p>
+        <p class="mt-4">
+            <a href="{% url 'seguimiento_pedido' venta_id=venta.id_venta_producto %}" class="btn btn-info mt-3 me-2">Rastrear mi Pedido</a>
+        </p>
+    {% else %}
+        <p class="mt-4">No pudimos cargar los detalles de tu pedido en este momento. Si tienes preguntas, por favor contacta a soporte.</p>
+    {% endif %}
+
     <a href="{% url 'index' %}" class="btn btn-primary mt-3">Volver al Inicio</a>
-    <a href="{% url 'mis_servicios' %}" class="btn btn-info mt-3">Ver mis Compras</a>
+    <a href="{% url 'mis_servicios' %}" class="btn btn-secondary mt-3">Ver mis Compras</a>
 </div>
 {% endblock %}

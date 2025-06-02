@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.contrib import messages
 import json
+import os
 from django.urls import reverse
 import decimal
 import traceback # Para depuración
@@ -14,8 +15,8 @@ from django.conf import settings
 TASA_CAMBIO_USD_CLP = decimal.Decimal('950.00') # Define esto en settings.py si es global
 
 # Importa todos los modelos y formularios necesarios.
-from .models import Servicio, Mensaje, Usuario, MetodosDePago, Producto, Comuna, TipoUsuario, InstanciaServicio, DetalleServicioAdquirido, VentaProducto, DetalleCompra
-from .forms import ServicioForm # Asegúrate de que este ServicioForm sea genérico o crea uno específico para PF si necesitas campos distintos.
+from .models import Servicio,Envio, Mensaje, ComentarioValoracionProducto,Usuario, MetodosDePago, Producto, Comuna, TipoUsuario, InstanciaServicio, DetalleServicioAdquirido, VentaProducto, DetalleCompra
+from .forms import ServicioForm, ComentarioValoracionForm # Asegúrate de que este ServicioForm sea genérico o crea uno específico para PF si necesitas campos distintos.
 
 import requests # Para las integraciones con APIs externas
 from django.db import connection
@@ -73,6 +74,8 @@ def is_preparador_fisico(user):
 def is_cliente(user):
     """Verifica si el usuario es un Cliente (ID 4)."""
     return user.is_authenticated and hasattr(user, 'id_tipo_usuario') and user.id_tipo_usuario_id == 4
+
+
 
 # --- Vistas del Panel del Preparador Físico (Manteniendo la estructura original que tenías) ---
 # Nota: Los nombres de estas vistas (panel_nutricionista, lista_servicios_pf, etc.)
@@ -260,11 +263,16 @@ def carrito_view(request):
 from django.conf import settings # <<--- ¡Asegúrate de que esta línea esté presente!
 
 # ... (el resto de tus funciones y vistas) ...
+def obtener_costo_envio_del_carrito():
+    # Lógica para calcular o recuperar el costo de envío.
+    # Puede ser un valor fijo, basado en el peso, la ubicación, etc.
+    return Decimal('5.00') # Ejemplo de costo de envío
+
 
 @login_required(login_url='login')
 @user_passes_test(is_cliente, login_url='index')
 def checkout_view(request):
-    paypal_client_id = settings.PAYPAL_CLIENT_ID
+    paypal_client_id = settings.PAYPAL_CLIENT_ID # Asegúrate de que PAYPAL_CLIENT_ID esté en settings.py
 
     if request.method == 'POST':
         try:
@@ -274,27 +282,34 @@ def checkout_view(request):
             payment_method_id = request.POST.get('payment_method_id')
 
             if not payment_method_id:
-                return JsonResponse({'error': 'ID de método de pago no recibido'}, status=400)
+                return JsonResponse({'success': False, 'error': 'ID de método de pago no recibido'}, status=400)
             if not cart_data:
-                return JsonResponse({'error': 'El carrito está vacío'}, status=400)
+                return JsonResponse({'success': False, 'error': 'El carrito está vacío'}, status=400)
 
             backend_total_sin_descuento = Decimal('0.00')
+            has_physical_products = False # Bandera para saber si hay productos físicos
+
             for item in cart_data:
                 if item['type'] == 'producto':
                     try:
                         product = Producto.objects.get(id_producto=item['id'])
                         backend_total_sin_descuento += product.precio_unitario * item['cantidad']
+                        has_physical_products = True # Si hay al menos un producto, se requiere envío
                     except Producto.DoesNotExist:
-                        return JsonResponse({'error': f"Producto con ID {item['id']} no existe"}, status=400)
+                        return JsonResponse({'success': False, 'error': f"Producto con ID {item['id']} no existe"}, status=400)
                 elif item['type'] == 'servicio':
                     try:
                         servicio = Servicio.objects.get(id_servicio=item['id'])
                         backend_total_sin_descuento += servicio.precio_servicio * item['cantidad']
                     except Servicio.DoesNotExist:
-                        return JsonResponse({'error': f"Servicio con ID {item['id']} no existe"}, status=400)
+                        return JsonResponse({'success': False, 'error': f"Servicio con ID {item['id']} no existe"}, status=400)
 
             # Verificar elegibilidad para descuento
-            user_has_discount = check_rut_in_external_api(request.user.rut)
+            user_rut = request.user.rut if hasattr(request.user, 'rut') else None
+            user_has_discount = False
+            if user_rut:
+                user_has_discount = check_rut_in_external_api(user_rut)
+
             descuento_aplicado = Decimal('0.00')
             backend_total_con_descuento = backend_total_sin_descuento
 
@@ -311,22 +326,24 @@ def checkout_view(request):
             print(f"Frontend Total: {total_frontend}")
 
             # Comparar con el total del frontend con una tolerancia
-            if abs(backend_total_con_descuento - total_frontend) > 0.01:
-                return JsonResponse({'error': 'El total enviado no coincide con el calculado en el backend (con descuento)' if user_has_discount else 'El total enviado no coincide con el calculado en el backend'}, status=400)
+            if abs(backend_total_con_descuento - total_frontend) > Decimal('0.01'): # Usa Decimal para comparación
+                return JsonResponse({'success': False, 'error': 'El total enviado no coincide con el calculado en el backend (con descuento)' if user_has_discount else 'El total enviado no coincide con el calculado en el backend'}, status=400)
 
             with transaction.atomic():
                 try:
                     metodo_pago = MetodosDePago.objects.get(id_mp=payment_method_id)
                 except MetodosDePago.DoesNotExist:
-                    return JsonResponse({'error': f'Método de pago con ID "{payment_method_id}" no configurado'}, status=400)
+                    return JsonResponse({'success': False, 'error': f'Método de pago con ID "{payment_method_id}" no configurado'}, status=400)
 
+                # 1. Crear la VentaProducto
                 venta = VentaProducto.objects.create(
-                    id_cliente=request.user,
+                    id_cliente=request.user, # Asumiendo que VentaProducto.id_cliente es un FK a tu modelo CustomUser/User de Django
                     fecha_venta=timezone.now(),
                     total_venta=backend_total_con_descuento,
                     id_mp=metodo_pago
                 )
 
+                # 2. Iterar sobre los ítems del carrito para crear DetalleCompra e InstanciaServicio
                 for item in cart_data:
                     if item['type'] == 'producto':
                         product = Producto.objects.get(id_producto=item['id'])
@@ -346,38 +363,158 @@ def checkout_view(request):
                             instancia = InstanciaServicio.objects.create(
                                 id_servicio=servicio_obj,
                                 id_proveedor_servicio=servicio_obj.id_proveedor_servicio,
-                                fecha_hora_programada=timezone.now(),
+                                fecha_hora_programada=timezone.now(), # O una fecha/hora de tu lógica de servicios
                                 reservado='S',
                                 estado_instancia='Programado'
                             )
+                            # CRÍTICO: Si quieres asociar DetalleServicioAdquirido a VentaProducto,
+                            # el modelo DetalleServicioAdquirido DEBE tener un FK a VentaProducto.
+                            # Si no lo tiene, estos servicios no se "unirán" a la venta específica en tu DB.
                             DetalleServicioAdquirido.objects.create(
-                                id_cliente=request.user,
+                                id_cliente=request.user, # Asumiendo que id_cliente aquí también apunta a User
                                 id_instancia_servicio=instancia,
                                 fecha_hora_adquisicion=timezone.now(),
                                 precio_pagado=servicio_obj.precio_servicio,
                                 id_mp=metodo_pago
+                                # Si tu modelo DetalleServicioAdquirido tiene id_venta_producto:
+                                # id_venta_producto=venta
                             )
 
-                print(f"Pago con {metodo_pago.tipo_pago} exitoso. ID de transacción (si aplica): {paypal_transaction_id}")
-                return JsonResponse({'success': True, 'transaction_id': paypal_transaction_id})
+                # 3. CREAR EL REGISTRO DE ENVIO SI HAY PRODUCTOS FÍSICOS
+                # El código_rastreo y nombre_transportista se deben asignar *posteriormente*
+                # cuando el paquete sea realmente enviado y tengas esa info.
+                envio_creado = False
+                if has_physical_products:
+                    try:
+                        Envio.objects.create(
+                            id_venta_producto=venta,
+                            fecha_envio=timezone.localdate(),
+                            estado_envio="Pendiente", # Estado inicial del envío
+                            costo_envio=obtener_costo_envio_del_carrito(), # Tu función para calcular el costo
+                            # codigo_rastreo y nombre_transportista se dejan nulos aquí por ahora
+                        )
+                        envio_creado = True
+                    except Exception as e:
+                        print(f"ERROR: No se pudo crear el registro de envío para la venta {venta.id_venta_producto}: {e}")
+                        # Si este error es crítico para tu negocio, puedes relanzar la excepción
+                        # para que la transacción se revierta:
+                        raise # Revertir la transacción si el envío no se puede crear
+
+                # VACÍA EL CARRITO (importante después de la transacción exitosa)
+                # Esto es crucial para que el carrito se borre después de una compra exitosa
+                request.session['cart'] = {}
+                request.session.modified = True
+                print("DEBUG: Carrito vaciado de la sesión.")
+
+                # --- ¡REDIRECCIÓN FINAL PARA TODOS LOS CASOS DE ÉXITO! ---
+                # Siempre redirige a pago_exitoso con el ID de la venta
+                redirect_url = reverse('pago_exitoso', args=[venta.id_venta_producto])
+                print(f"DEBUG CHECKOUT: Redirigiendo a: {redirect_url}")
+                return JsonResponse({'success': True, 'redirect_url': redirect_url})
 
         except MetodosDePago.DoesNotExist:
-            return JsonResponse({'error': 'El método de pago seleccionado no existe'}, status=400)
+            return JsonResponse({'success': False, 'error': 'El método de pago seleccionado no existe'}, status=400)
         except Producto.DoesNotExist:
-            return JsonResponse({'error': 'Uno de los productos en el carrito no existe'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Uno de los productos en el carrito no existe'}, status=400)
         except Servicio.DoesNotExist:
-            return JsonResponse({'error': 'Uno de los servicios en el carrito no existe'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Uno de los servicios en el carrito no existe'}, status=400)
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Error al decodificar los datos del carrito'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Error al decodificar los datos del carrito'}, status=400)
         except Exception as e:
-            print(f"Error al procesar el checkout: {e}")
-            return JsonResponse({'error': f'Error interno al procesar la compra: {e}'}, status=500)
+            # Captura cualquier otra excepción no manejada y la loguea/devuelve un error general
+            print(f"ERROR FATAL al procesar el checkout: {e}")
+            return JsonResponse({'success': False, 'error': f'Error interno al procesar la compra: {e}'}, status=500)
 
-    else:
+    else: # GET request
         return render(request, 'core/checkout.html', {'paypal_client_id': paypal_client_id})
 
-def pago_exitoso_view(request):
-    return render(request, 'core/pago_exitoso.html')
+
+@login_required(login_url='login')
+def pago_exitoso_view(request, venta_id=None):
+    venta = None
+    if venta_id:
+        try:
+            # Asegúrate de que esta venta pertenezca al usuario logueado
+            venta = VentaProducto.objects.get(id_venta_producto=venta_id, id_cliente=request.user)
+
+            # --- CORRECCIÓN AQUÍ ---
+            # Reemplaza .username con el campo correcto de tu modelo Usuario
+            # Por ejemplo, si tu modelo Usuario usa 'email' como identificador:
+            user_identifier = request.user.email
+            # O si tu modelo Usuario tiene un campo 'rut':
+            # user_identifier = request.user.rut
+            # O si usa el método get_username() de AbstractUser (que devolverá el campo definido en USERNAME_FIELD):
+            # user_identifier = request.user.get_username()
+
+            print(f"DEBUG PAGO_EXITOSO: Venta ID {venta_id} encontrada para el usuario {user_identifier}.")
+        except VentaProducto.DoesNotExist:
+            venta = None
+            # También corrige aquí para evitar el error si la venta no se encuentra
+            # o si request.user ya es anónimo por alguna razón (aunque login_required debería evitarlo)
+            user_identifier = request.user.email if hasattr(request.user, 'email') else 'Usuario Desconocido' # Fallback seguro
+            print(f"DEBUG PAGO_EXITOSO: Venta ID {venta_id} NO encontrada o no pertenece al usuario {user_identifier}.")
+
+    context = {
+        'venta': venta,
+    }
+    return render(request, 'core/pago_exitoso.html', context)
+
+
+
+# --- FUNCIONES Y LÓGICA PARA LA API DE AFTERSHIP ---
+def get_aftership_tracking_info(tracking_number, courier_slug):
+    """
+    Función para obtener información de seguimiento de AfterShip.
+    Retorna la información del tracking o un error.
+    """
+    # Asegúrate de que AFTERSHIP_API_KEY y AFTERSHIP_BASE_URL estén definidos en settings.py
+    # o aquí directamente si no los tienes en settings.
+    aftership_api_key = getattr(settings, 'AFTERSHIP_API_KEY', None)
+    aftership_base_url = getattr(settings, 'AFTERSHIP_BASE_URL', "https://api.aftership.com/v4/trackings")
+
+    if not aftership_api_key:
+        return None, "Clave API de AfterShip no configurada."
+
+    headers = {
+        "aftership-api-key": aftership_api_key,
+        "Content-Type": "application/json"
+    }
+
+    # Endpoint para obtener un tracking existente.
+    # AfterShip lo crea si no existe al hacer el GET, o lo actualiza si ya existe.
+    url = f"{aftership_base_url}/{courier_slug}/{tracking_number}"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status() # Lanza una excepción si el código de estado es un error (4xx o 5xx)
+        data = response.json()
+
+        if data and 'data' in data and 'tracking' in data['data']:
+            return data['data']['tracking'], None # Retorna la info de tracking y no hay error
+        elif data and 'meta' in data and data['meta'].get('code') == 404:
+             return None, "Número de rastreo o transportista no encontrado en AfterShip."
+        else:
+            # Manejo de otros posibles errores de la API o formato de respuesta inesperado
+            return None, data.get('meta', {}).get('message', 'Respuesta inesperada de AfterShip.')
+
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code
+        error_message = f"Error HTTP {status_code} al consultar AfterShip: {e.response.text}"
+        print(error_message)
+        if status_code == 401:
+            return None, "Error de autenticación con AfterShip. Revisa tu clave API."
+        elif status_code == 400:
+            return None, "Solicitud inválida a AfterShip. Revisa los datos de rastreo."
+        else:
+            return None, f"Error del servidor de AfterShip: {error_message}"
+    except requests.exceptions.ConnectionError:
+        return None, "No se pudo conectar con el servidor de AfterShip."
+    except requests.exceptions.Timeout:
+        return None, "Tiempo de espera agotado al conectar con AfterShip."
+    except requests.exceptions.RequestException as e:
+        return None, f"Error desconocido de conexión con AfterShip: {e}"
+    except json.JSONDecodeError:
+        return None, "Respuesta no JSON de AfterShip."
 
 @login_required(login_url='login')
 @user_passes_test(is_cliente, login_url='index')
@@ -676,6 +813,7 @@ def clean_and_split_rut(rut_completo):
 def check_rut_in_external_api(user_rut_completo):
     """Verifica el RUT en la API externa."""
     user_rut_numerico, user_dv_rut = clean_and_split_rut(user_rut_completo)
+    print(f"DEBUG (API): Verificando RUT usuario: Num='{user_rut_numerico}', DV='{user_dv_rut}'") # <--- AÑADIDO
     if not user_rut_numerico or not user_dv_rut:
         print(f"DEBUG (API): RUT inválido para verificación: {user_rut_completo}")
         return False
@@ -685,8 +823,9 @@ def check_rut_in_external_api(user_rut_completo):
         clientes_api_data = response.json()
         for cliente_api in clientes_api_data:
             api_rut_completo = cliente_api.get('numero_rut')
-            api_rut_numerico, api_dv_rut = clean_and_split_rut(api_rut_completo)
-            if api_rut_numerico == user_rut_numerico and api_dv_rut == user_dv_rut:
+            api_dv_api = cliente_api.get('dv_rut') # <--- ASUMO QUE ESTE CAMPO EXISTE
+            print(f"DEBUG (API): RUT API: Num='{api_rut_completo}', DV='{api_dv_api}'") # <--- AÑADIDO
+            if api_rut_completo == user_rut_numerico and api_dv_api == user_dv_rut:
                 print(f"DEBUG (API): RUT {user_rut_completo} encontrado en la API.")
                 return True
         print(f"DEBUG (API): RUT {user_rut_completo} no encontrado en la API.")
@@ -994,4 +1133,114 @@ def calculate_total_from_cart(cart_data):
         total += Decimal(item['precio']) * item['cantidad']
     return total
 
-# Nuevos preparador fisico
+# detalle producto
+
+def detalle_producto(request, id_producto):
+    # Ya estás obteniendo el objeto Producto correctamente aquí
+    # Siempre usa 'pk' para la clave primaria, o el nombre real del campo si no es 'id'
+    producto = get_object_or_404(Producto, pk=id_producto)
+
+    # Filtra los comentarios por el objeto 'producto' (no solo el ID)
+    comentarios = ComentarioValoracionProducto.objects.filter(id_producto=producto).order_by('-fecha_comentario')
+
+    if request.method == 'POST':
+        form = ComentarioValoracionForm(request.POST)
+        if form.is_valid():
+            # Crea una instancia del comentario pero NO la guarda todavía en la base de datos
+            # Esto nos permite asignarle las claves foráneas antes de guardarla.
+            nuevo_comentario = form.save(commit=False) 
+            
+            # Asigna el objeto Producto (la instancia completa) al campo id_producto
+            nuevo_comentario.id_producto = producto 
+            
+            # Asigna el objeto Usuario actual (request.user) al campo id_usuario.
+            # Asegúrate de que 'request.user' sea una instancia de tu modelo de Usuario.
+            nuevo_comentario.id_usuario = request.user 
+            
+            # Ahora sí, guarda el comentario con las relaciones correctas en la base de datos
+            nuevo_comentario.save() 
+
+            return redirect('detalle_producto', id_producto=id_producto)
+    else:
+        form = ComentarioValoracionForm()
+
+    return render(request, 'core/detalle_producto.html', {
+        'producto': producto,
+        'comentarios': comentarios,
+        'form': form
+    })
+
+
+#seguimiento
+try:
+    from gymlife.config import AFTERSHIP_API_KEY, AFTERSHIP_API_BASE_URL
+except ImportError:
+        # Asegúrate de que estas variables de entorno estén configuradas en tu sistema
+        AFTERSHIP_API_KEY = os.environ.get('AFTERSHIP_API_KEY', '')
+        AFTERSHIP_API_BASE_URL = os.environ.get('AFTERSHIP_API_BASE_URL', 'https://api.aftership.com/v4')
+
+
+@login_required(login_url='login')
+def seguimiento_pedido(request, venta_id):
+    venta = None
+    envio = None
+    detalles_compra = []
+    detalles_servicios = []
+    info_seguimiento = None
+    error_seguimiento = None
+
+    try:
+        # Intenta obtener la VentaProducto y asegurar que pertenece al usuario
+        venta = get_object_or_404(VentaProducto, id_venta_producto=venta_id, id_cliente=request.user)
+        # Ajusta la línea anterior según tu modelo de usuario y VentaProducto.id_cliente
+
+        # Obtener detalles de productos
+        detalles_compra = DetalleCompra.objects.filter(id_venta_producto=venta)
+
+        # Obtener detalles de servicios
+        # Si DetalleServicioAdquirido tiene FK a VentaProducto, es más directo:
+        # detalles_servicios = DetalleServicioAdquirido.objects.filter(id_venta_producto=venta)
+        # Si no, esto es más complejo. Por ahora, asumiré una relación indirecta o que no se muestran por venta específica.
+        # Ajusta esta parte si necesitas filtrar servicios por venta específica
+        detalles_servicios = DetalleServicioAdquirido.objects.filter(id_cliente=request.user) # Esto obtiene todos los servicios del usuario
+
+        # Intentar obtener el registro de envío
+        try:
+            envio = Envio.objects.get(id_venta_producto=venta)
+        except Envio.DoesNotExist:
+            envio = None # No hay envío para esta venta
+
+        # Si hay un envío y tiene código de rastreo y transportista, consultar AfterShip
+        if envio and envio.codigo_rastreo and envio.nombre_transportista:
+            info_seguimiento, error_seguimiento = get_aftership_tracking_info(
+                envio.codigo_rastreo, envio.nombre_transportista
+            )
+            if error_seguimiento:
+                print(f"Error al obtener seguimiento de AfterShip para Venta ID {venta_id}: {error_seguimiento}")
+        # --- ESTE ES EL CAMBIO CLAVE PARA ELIMINAR EL ERROR DE DEFINICIÓN ---
+        # Si hay un envío pero no tiene código de rastreo (aún no se ha asignado)
+        elif envio and not envio.codigo_rastreo:
+            error_seguimiento = "Pedido con productos físicos, pero el código de rastreo aún no está disponible."
+        # No necesitas un 'elif has_physical_products and not envio' aquí,
+        # la ausencia de 'envio' ya indica que no hay seguimiento físico en la DB.
+        # Puedes añadir un mensaje si quieres, pero no es estrictamente necesario para el error.
+
+
+    except VentaProducto.DoesNotExist:
+        error_seguimiento = "Pedido no encontrado o no tienes permiso para verlo."
+        print(f"DEBUG SEGUIMIENTO: Venta ID {venta_id} no encontrada o no pertenece al usuario {request.user.username}.")
+    except Exception as e:
+        error_seguimiento = f"Ocurrió un error al cargar los detalles del pedido: {e}"
+        print(f"ERROR SEGUIMIENTO: Error inesperado para Venta ID {venta_id}: {e}")
+
+    context = {
+        'venta': venta,
+        'detalles_compra': detalles_compra,
+        'detalles_servicios': detalles_servicios,
+        'envio': envio,
+        'info_seguimiento': info_seguimiento,
+        'error_seguimiento': error_seguimiento,
+    }
+    return render(request, 'core/seguimiento_pedido.html', context)
+
+
