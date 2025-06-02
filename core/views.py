@@ -1244,3 +1244,27 @@ def seguimiento_pedido(request, venta_id):
     return render(request, 'core/seguimiento_pedido.html', context)
 
 
+
+
+@login_required
+def detalle_venta_producto(request, venta_id): # RENOMBRADA LA FUNCIÓN
+    """
+    Vista para mostrar los detalles de una VentaProducto específica.
+    """
+    venta = get_object_or_404(VentaProducto, id_venta_producto=venta_id, id_cliente=request.user.id_usuario)
+
+    envio = None
+    try:
+        envio = Envio.objects.get(id_venta_producto=venta)
+    except Envio.DoesNotExist:
+        pass
+
+    detalles_compra = DetalleCompra.objects.filter(id_venta_producto=venta)
+
+    context = {
+        'venta': venta,
+        'envio': envio,
+        'detalles_compra': detalles_compra,
+        'from_mis_compras': True # Agregamos un contexto para la plantilla, útil si la vista se usa también como "pago exitoso" inicial
+    }
+    return render(request, 'core/pago_exitoso.html', context) # Sigue usando tu plantilla pago_exitoso.html

@@ -1,28 +1,90 @@
 {# core/templates/core/pago_exitoso.html #}
 {% extends 'core/base.html' %}
 {% load static %}
+{% load humanize %} {# Asegúrate de tener humanize cargado para los formatos de números #}
 
-{% block title %}Pago Exitoso{% endblock %}
+{% block title %}Detalle de Compra{% endblock %} {# Cambiado el título #}
 
 {% block content %}
-<div class="container mt-5 text-center">
-    <div class="alert alert-success" role="alert">
+<div class="container mt-5">
+    {# Mensaje de éxito solo si vienes de un pago reciente (puedes pasarlo desde la vista original de pago exitoso) #}
+    {% if from_successful_payment %} {# Asumiendo que pasas esta variable si es una redirección directa #}
+    <div class="alert alert-success text-center" role="alert">
         <h4 class="alert-heading">¡Pago Exitoso!</h4>
         <p>Tu compra se ha procesado correctamente. Recibirás un correo de confirmación con los detalles.</p>
         <hr>
         <p class="mb-0">Gracias por preferir nuestros servicios y productos.</p>
     </div>
-
-    {% if venta %}
-        <p class="mt-4">Tu número de pedido es: <strong>#{{ venta.id_venta_producto }}</strong></p>
-        <p class="mt-4">
-            <a href="{% url 'seguimiento_pedido' venta_id=venta.id_venta_producto %}" class="btn btn-info mt-3 me-2">Rastrear mi Pedido</a>
-        </p>
-    {% else %}
-        <p class="mt-4">No pudimos cargar los detalles de tu pedido en este momento. Si tienes preguntas, por favor contacta a soporte.</p>
     {% endif %}
 
-    <a href="{% url 'index' %}" class="btn btn-primary mt-3">Volver al Inicio</a>
-    <a href="{% url 'mis_servicios' %}" class="btn btn-secondary mt-3">Ver mis Compras</a>
+    <h2 class="mb-4">Detalles de la Compra #{{ venta.id_venta_producto }}</h2>
+
+    {% if venta %}
+        <div class="card mb-4">
+            <div class="card-header">
+                Información General de la Compra
+            </div>
+            <div class="card-body">
+                <p><strong>Fecha de Compra:</strong> {{ venta.fecha_venta|date:"d M Y H:i" }}</p>
+                <p><strong>Total Pagado:</strong> <span class="text-success">${{ venta.total_venta|floatformat:"0"|intcomma }}</span></p>
+                <p><strong>Método de Pago:</strong> {{ venta.id_mp.tipo_pago }}</p>
+                <p><strong>Comprador:</strong> {{ venta.id_cliente.first_name }} {{ venta.id_cliente.last_name }}</p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                Artículos Comprados
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for detalle in detalles_compra %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ detalle.id_producto.nombre }}</strong>
+                            <br>
+                            <small class="text-muted">Cantidad: {{ detalle.cantidad_adquirida }}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">${{ detalle.subtotal_detalle|floatformat:"0"|intcomma }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-center text-muted">No hay productos en esta compra.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% if envio %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    Información del Envío
+                </div>
+                <div class="card-body">
+                    <p><strong>Código de Rastreo:</strong> {{ envio.codigo_rastreo|default:"N/A" }}</p>
+                    <p><strong>Transportista:</strong> {{ envio.nombre_transportista|default:"N/A"|capfirst }}</p>
+                    <p><strong>Estado del Envío:</strong> <span class="badge 
+                        {% if envio.estado_envio == 'En tránsito' %}bg-info
+                        {% elif envio.estado_envio == 'Entregado' %}bg-success
+                        {% elif envio.estado_envio == 'Pendiente' %}bg-warning text-dark
+                        {% elif envio.estado_envio == 'Fallido' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">{{ envio.estado_envio|default:"No disponible" }}</span></p>
+                    <p><strong>Fecha de Envío:</strong> {{ envio.fecha_envio|date:"d M Y"|default:"N/A" }}</p>
+                    <p><strong>Costo de Envío:</strong> ${{ envio.costo_envio|floatformat:0|default:"0" }}</p>
+
+                    
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                Esta compra no tiene información de envío asociada o aún no ha sido registrada.
+            </div>
+        {% endif %}
+
+    {% else %}
+        <p class="mt-4 alert alert-warning">No pudimos cargar los detalles de tu pedido en este momento. Si tienes preguntas, por favor contacta a soporte.</p>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{% url 'index' %}" class="btn btn-primary mt-3 me-2">Volver al Inicio</a>
+        <a href="{% url 'mis_servicios' %}" class="btn btn-secondary mt-3">Ver mis Compras</a>
+    </div>
 </div>
 {% endblock %}

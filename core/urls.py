@@ -45,7 +45,7 @@ urlpatterns = [
     path('carrito/', views.carrito_view, name='carrito'),
     path('checkout/', views.checkout_view, name='checkout'),
     path('pago_exitoso/', views.pago_exitoso_view, name='pago_exitoso'),
-    path('pago-exitoso/<int:venta_id>/', views.pago_exitoso_view, name='pago_exitoso'),
+    path('pago-exitoso/<int:venta_id>/', views.detalle_venta_producto, name='pago_exitoso'),
     # Rutas para el cliente
     path('cliente/servicios/', views.cliente_ver_servicios, name='cliente_ver_servicios'),
     path('mis-servicios/', views.mis_servicios_view, name='mis_servicios'),
@@ -56,6 +56,8 @@ urlpatterns = [
     path('productos/<int:id_producto>/', views.detalle_producto, name='detalle_producto'),
     #seguimiento
     path('seguimiento/<int:venta_id>/', views.seguimiento_pedido, name='seguimiento_pedido'),
+
+   path('detalle-compra/<int:venta_id>/', views.detalle_venta_producto, name='detalle_venta_producto'),
 
     
    
