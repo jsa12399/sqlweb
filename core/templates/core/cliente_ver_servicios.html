@@ -1,80 +1,105 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% load humanize %}
+{# {% load l10n %} <--- ELIMINAR, ya que no usarás unlocalize #}
 
 {% block title %}Servicios Disponibles{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1>Servicios Disponibles</h1>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="row">
-        {% for servicio in servicios_disponibles %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ servicio.nombre_servicio }}</h5>
-                    <p class="card-text">{{ servicio.descripcion_servicio }}</p>
-                    <p class="card-text"><strong>Precio: ${{ servicio.precio_servicio|floatformat:0 }}</strong></p>
-                    <p class="card-text">Proveedor: {{ servicio.id_proveedor_servicio.nombre }} {{ servicio.id_proveedor_servicio.apellido }}</p>
-                    <button class="btn btn-primary anadir-carrito-btn"
-                            data-item-id="{{ servicio.id_servicio }}"
-                            data-item-nombre="{{ servicio.nombre_servicio }}"
-                            data-item-precio="{{ servicio.precio_servicio|floatformat:-2 }}" {# float para JS #}
-                            data-item-type="servicio"> {# Indica que es un servicio #}
-                        Añadir al Carrito
-                    </button>
+    <h1>Servicios Disponibles para Adquirir</h1>
+    <hr>
+    {% if servicios_disponibles %}
+        <div class="row">
+            {% for servicio in servicios_disponibles %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ servicio.nombre_servicio }}</h5>
+                        <p class="card-text">{{ servicio.descripcion_servicio }}</p>
+                        {# Asegúrate de que el precio aquí se muestre en un <span> para que el JS lo lea #}
+                        <p class="card-text"><strong>Precio:</strong> <span class="precio-servicio">${{ servicio.precio_servicio|intcomma }}</span></p>
+                        
+                        <button class="btn btn-success add-to-cart-btn"
+                                data-id="{{ servicio.id_servicio }}"
+                                data-nombre="{{ servicio.nombre_servicio }}"
+                                {# data-precio-formato se ELIMINA porque el JS leerá del span #}
+                                data-tipo="servicio">
+                            Añadir al Carrito
+                        </button>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <div class="col-12">
-            <p>No hay servicios disponibles en este momento.</p>
-        </div>
-        {% endfor %}
-    </div>
+    {% else %}
+        <p class="alert alert-warning">No hay servicios disponibles en este momento.</p>
+    {% endif %}
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
+    // Tu script JavaScript para añadir al carrito, replicando la lógica de productos.html
     document.addEventListener('DOMContentLoaded', function() {
-        const botonesAnadir = document.querySelectorAll('.anadir-carrito-btn');
+        // Función para despachar un evento personalizado para actualizar el contador del carrito en el navbar
+        function dispatchCarritoUpdatedEvent() {
+            const event = new Event('carritoUpdated');
+            document.dispatchEvent(event);
+        }
 
-        botonesAnadir.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const itemId = this.dataset.itemId;
-                const itemNombre = this.dataset.itemNombre;
-                const itemPrecio = parseFloat(this.dataset.itemPrecio);
-                const itemType = this.dataset.itemType; // 'servicio' o 'producto'
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const serviceCard = button.closest('.card'); // o .service-card
+                const id = this.dataset.id;
+                const nombre = this.dataset.nombre;
+                const tipo = this.dataset.tipo;
 
+                // **Lógica clave: leer el precio del span y limpiarlo**
+                const precioText = serviceCard.querySelector('.precio-servicio').textContent; // Asegúrate de que el span tenga esta clase
+                let precioLimpio = precioText.replace(/\$/g, '').replace(/\s/g, '').replace(/\./g, ''); // Elimina '$', espacios y PUNTOS
+                let precio = parseFloat(precioLimpio.replace(/,/g, '.')); // Reemplaza comas por puntos y parsea
+
+                if (isNaN(precio)) {
+                    console.error("Error: el precio del servicio no es un número válido después de la limpieza. Precio original:", precioText, "Precio limpio:", precioLimpio);
+                    alert("Hubo un error al añadir el servicio al carrito. Por favor, intente de nuevo.");
+                    return; 
+                }
+
+                // Para servicios, la cantidad es fija en 1 al añadir
+                let cantidad = 1; 
+                
                 let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-                let itemExistente = carrito.find(item => item.id == itemId && item.type == itemType);
 
-                if (itemExistente) {
-                    itemExistente.cantidad += 1;
-                    alert(`Cantidad de "${itemNombre}" actualizada en el carrito.`);
+                // Lógica para evitar mezclar productos y servicios
+                if (carrito.length > 0) {
+                    const existingItemType = carrito[0].type;
+                    if (existingItemType !== tipo) {
+                        if (confirm(`Tu carrito ya contiene ${existingItemType === 'producto' ? 'productos' : 'servicios'}. ¿Deseas vaciarlo y añadir este ${tipo}?`)) {
+                            carrito = []; 
+                        } else {
+                            return; 
+                        }
+                    }
+                }
+
+                const existingItem = carrito.find(item => item.id === id && item.type === tipo);
+
+                if (existingItem) {
+                    existingItem.cantidad += cantidad;
                 } else {
                     carrito.push({
-                        id: itemId,
-                        nombre: itemNombre,
-                        precio: itemPrecio,
-                        type: itemType,
-                        cantidad: 1
+                        id: id,
+                        nombre: nombre,
+                        precio: precio,
+                        cantidad: cantidad,
+                        type: tipo
                     });
-                    alert(`"${itemNombre}" añadido al carrito.`);
                 }
 
                 localStorage.setItem('carrito', JSON.stringify(carrito));
-                // Opcional: Si tienes un contador en la barra de navegación, puedes actualizarlo aquí.
-                // Por ejemplo, disparando un evento personalizado que el JS de tu base.html escuche.
-                window.dispatchEvent(new Event('carritoUpdated'));
+                alert(`"${nombre}" ha sido añadido al carrito.`);
+                dispatchCarritoUpdatedEvent();
             });
         });
     });

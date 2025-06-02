@@ -1,150 +1,111 @@
-{# core/nutricionista.html #}
-
-
+{# core/templates/core/nutricionista.html #}
 {% extends 'core/base.html' %}
 {% load static %}
-{% load user_tags %}
+{% load humanize %}
+{# {% load l10n %} <--- ELIMINAR #}
 
+
+{% block title %}Nutricionistas{% endblock %}
 
 {% block content %}
-
-<style>
-    /* core/static/core/css/nutricionista.css */
-
-/* Estilos generales para el contenedor principal */
-.container.mt-5 {
-    padding-top: 3rem; /* Espacio extra en la parte superior */
-    padding-bottom: 3rem; /* Espacio extra en la parte inferior */
-}
-
-h1, h2 {
-    color: #2c3e50; /* Un color oscuro para los títulos */
-    margin-bottom: 1.5rem;
-    font-weight: 700; /* Negrita para los títulos */
-    text-align: center; /* Centrar títulos */
-}
-
-p {
-    color: #555;
-    line-height: 1.6;
-}
-
-hr {
-    border-top: 2px solid #e0e0e0;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-}
-
-/* Estilos para las tarjetas de servicio */
-.card {
-    border: 1px solid #ddd;
-    border-radius: 10px; /* Bordes redondeados */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
-    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transición suave al pasar el mouse */
-    background-color: #ffffff; /* Fondo blanco */
-}
-
-.card:hover {
-    transform: translateY(-5px); /* Pequeño levantamiento al pasar el mouse */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-}
-
-.card-body {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* Distribuye el contenido verticalmente */
-}
-
-.card-title {
-    color: #3498db; /* Azul para el título del servicio */
-    font-size: 1.4rem;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-}
-
-.card-text {
-    font-size: 0.95rem;
-    margin-bottom: 0.5rem;
-    color: #666;
-}
-
-.card-text strong {
-    color: #333;
-}
-
-/* Estilo para el botón de adquirir servicio */
-.btn-primary {
-    background-color: #28a745; /* Un verde vibrante para "Adquirir" */
-    border-color: #28a745;
-    font-weight: 600;
-    margin-top: 1rem; /* Espacio superior para el botón */
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.btn-primary:hover {
-    background-color: #218838; /* Verde un poco más oscuro al pasar el mouse */
-    border-color: #1e7e34;
-}
-
-/* Mensajes de texto deshabilitados */
-.text-muted {
-    font-size: 0.85rem;
-    color: #888 !important; /* Asegura que el color sea gris */
-    margin-top: 1rem;
-}
-
-/* Responsive adjustments (optional, but good practice for Bootstrap) */
-@media (max-width: 768px) {
-    .col-md-4 {
-        margin-bottom: 1.5rem; /* Ajuste el margen inferior en pantallas pequeñas */
-    }
-}
-</style>
 <div class="container mt-5">
-    
-    <h1>Nuestros Servicios de Nutrición</h1>
-    <p>Descubre los planes y servicios ofrecidos por nuestros profesionales de la nutrición.</p>
+    <h1>Servicios de Nutrición</h1>
 
-    <hr>
-
-    <h2>Servicios Disponibles:</h2>
-    {% if servicios_nutricionista %}
-        <div class="row">
-            {% for servicio in servicios_nutricionista %}
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ servicio.nombre_servicio }}</h5>
-                            <p class="card-text">{{ servicio.descripcion_servicio }}</p>
-                            <p class="card-text"><strong>Ofrecido por:</strong> 
-                                {% if servicio.id_proveedor_servicio %}
-                                    {{ servicio.id_proveedor_servicio.nombre }} {{ servicio.id_proveedor_servicio.apellido }}
-                                {% else %}
-                                    Nutricionista Desconocido
-                                {% endif %}
-                            </p>
-                            <p class="card-text"><strong>Precio:</strong> ${{ servicio.precio_servicio|floatformat:0 }}</p>
-                            <p class="card-text"><strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos</p>
-                            
-                            {# Botón para adquirir el servicio #}
-                            {% if request.user.is_authenticated and request.user|is_cliente %}
-                                <form action="{% url 'cliente_adquirir_servicio' servicio.id_servicio %}" method="post">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-primary">Adquirir Servicio</button>
-                                </form>
-                            {% elif not request.user.is_authenticated %}
-                                <p class="text-muted">Inicia sesión como cliente para adquirir servicios.</p>
-                            {% else %}
-                                <p class="text-muted">No puedes adquirir servicios con tu rol actual.</p>
-                            {% endif %}
-                        </div>
-                    </div>
+    <div class="row">
+        {% for servicio in servicios_nutricionista %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 service-card">
+                <img src="{% static 'core/img/placeholder_nutrition.jpeg' %}" class="card-img-top" alt="Imagen del Servicio de Nutrición">
+                <div class="card-body">
+                    <h5 class="card-title">{{ servicio.nombre_servicio }}</h5>
+                    <p class="card-text">{{ servicio.descripcion_servicio|default:"Sin descripción." }}</p>
+                    {# Asegúrate de que el precio aquí se muestre en un <span> para que el JS lo lea #}
+                    <p class="card-text"><strong>Precio:</strong> <span class="precio-servicio">${{ servicio.precio_servicio|floatformat:"0"|intcomma }}</span></p>
+                    <p class="card-text"><strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos</p>
+                    <p class="card-text"><strong>Nutricionista:</strong> {{ servicio.id_proveedor_servicio.nombre }} {{ servicio.id_proveedor_servicio.apellido }}</p>
+                    <button class="btn btn-success add-to-cart-btn"
+                            data-id="{{ servicio.id_servicio }}"
+                            data-nombre="{{ servicio.nombre_servicio }}"
+                            {# data-precio-formato se ELIMINA #}
+                            data-tipo="servicio">
+                        Añadir al Carrito
+                    </button>
                 </div>
-            {% endfor %}
+            </div>
         </div>
-    {% else %}
-        <p>No hay servicios de nutrición disponibles en este momento.</p>
-    {% endif %}
+        {% empty %}
+        <div class="col-12">
+            <p>No hay servicios de nutrición disponibles en este momento.</p>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tu script JavaScript para añadir al carrito, replicando la lógica de productos.html
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para despachar un evento personalizado para actualizar el contador del carrito en el navbar
+        function dispatchCarritoUpdatedEvent() {
+            const event = new Event('carritoUpdated');
+            document.dispatchEvent(event);
+        }
+
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const serviceCard = button.closest('.card'); // o .service-card
+                const id = this.dataset.id;
+                const nombre = this.dataset.nombre;
+                const tipo = this.dataset.tipo;
+
+                // **Lógica clave: leer el precio del span y limpiarlo**
+                const precioText = serviceCard.querySelector('.precio-servicio').textContent; // Asegúrate de que el span tenga esta clase
+                let precioLimpio = precioText.replace(/\$/g, '').replace(/\s/g, '').replace(/\./g, ''); // Elimina '$', espacios y PUNTOS
+                let precio = parseFloat(precioLimpio.replace(/,/g, '.')); // Reemplaza comas por puntos y parsea
+
+                if (isNaN(precio)) {
+                    console.error("Error: el precio del servicio no es un número válido después de la limpieza. Precio original:", precioText, "Precio limpio:", precioLimpio);
+                    alert("Hubo un error al añadir el servicio al carrito. Por favor, intente de nuevo.");
+                    return; 
+                }
+
+                // Para servicios, la cantidad es fija en 1 al añadir
+                let cantidad = 1; 
+                
+                let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+                // Lógica para evitar mezclar productos y servicios
+                if (carrito.length > 0) {
+                    const existingItemType = carrito[0].type;
+                    if (existingItemType !== tipo) {
+                        if (confirm(`Tu carrito ya contiene ${existingItemType === 'producto' ? 'productos' : 'servicios'}. ¿Deseas vaciarlo y añadir este ${tipo}?`)) {
+                            carrito = []; 
+                        } else {
+                            return; 
+                        }
+                    }
+                }
+
+                const existingItem = carrito.find(item => item.id === id && item.type === tipo);
+
+                if (existingItem) {
+                    existingItem.cantidad += cantidad;
+                } else {
+                    carrito.push({
+                        id: id,
+                        nombre: nombre,
+                        precio: precio,
+                        cantidad: cantidad,
+                        type: tipo
+                    });
+                }
+
+                localStorage.setItem('carrito', JSON.stringify(carrito));
+                alert(`"${nombre}" ha sido añadido al carrito.`);
+                dispatchCarritoUpdatedEvent();
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -1,82 +1,133 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>SportFit</title>
-    {# Solo necesitas un {% load static %} al principio del archivo #}
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <header>
-        <nav>
-            <ul class="menu">
-                <li><a href="{% url 'index' %}">Inicio</a></li>
-                <li class="submenu">
-                    <a href="#">Servicios</a>
-                    <ul>
-                        <li><a href="{% url 'nutricionista' %}">Nutricionista</a></li>
-                        <li><a href="{% url 'preparadorfisico' %}">Preparador físico</a></li>
-                    </ul>
-                </li>
-                <li><a href="{% url 'productos' %}">Productos</a></li>
-                
-                {# AQUI ES DONDE AÑADIREMOS EL ENLACE AL CARRITO #}
-                <li class="nav-item-carrito"> {# Puedes usar una clase para estilos específicos #}
-                    <a href="{% url 'carrito' %}" class="carrito-link">
-                        🛒 Carrito <span id="carrito-contador">(0)</span>
-                    </a>
-                </li>
+    {% load static %}
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> {# ¡IMPRESCINDIBLE PARA LA RESPONSIVIDAD! #}
+        <title>{% block title %}SportFit{% endblock %}</title>
 
-                {% if user.is_authenticated %}
-                    {# Si tienes lógica para roles, puedes añadirla aquí dentro del li #}
-                    {# Por ejemplo, si usas los test que definiste en views.py, podrías hacer esto (requiere un custom tag o filtro) #}
-                    {# {% if user|is_nutricionista %} #}
-                    {#     <li><a href="{% url 'panel_nutricionista' %}">Panel Nutricionista</a></li> #}
-                    {# {% endif %} #}
-                    <li><a href="{% url 'logout' %}">Cerrar sesión ({{ user.email }})</a></li>
-                {% else %}
-                    <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
-                    <li><a href="{% url 'register' %}">Registrarse</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
+        {# Enlaces a CSS Externos e Internos #}
+        {# 1. Bootstrap CSS - para estilos de componentes, grid, etc. #}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+        rel="stylesheet" 
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" 
+        crossorigin="anonymous">
+        {# 2. Font Awesome - para iconos (carrito, etc.) #}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+        {# 3. Tu CSS personalizado - asegúrate de que el nombre del archivo sea correcto (styles.css o style.css) #}
+        <link rel="stylesheet" href="{% static 'core/css/style.css' %}"> {# O 'styles.css' si ese es tu nombre real #}
+        <link rel="stylesheet" href="{% static 'core/css/nutricionista.css' %}">
+        <link rel="stylesheet" href="{% static 'core/css/pf.css' %}">
+        
+        {% block extra_css %}{% endblock %} {# Para CSS adicional que una plantilla hija quiera agregar #}
+    </head>
+    <body>
+        <header>
+            <nav>
+                <ul class="menu">
+                    <li><a href="{% url 'index' %}">Inicio</a></li>
+                    <li class="submenu">
+                        <a href="#">Servicios</a>
+                        <ul>
+                            <li><a href="{% url 'nutricionista' %}">Nutricionista</a></li>
+                            <li><a href="{% url 'preparadorfisico' %}">Preparador Físico</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="{% url 'productos' %}">Productos</a></li>
+                    
+                    {# Enlace al carrito con icono y contador #}
+                    <li class="nav-item-carrito">
+                        <a href="{% url 'carrito' %}" class="carrito-link">
+                            <i class="fas fa-shopping-cart"></i> Carrito <span id="carrito-contador">(0)</span>
+                        </a>
+                    </li>
 
-    {% block content %}{% endblock %}
+                    {% if user.is_authenticated %}
+                        {# Menú desplegable para el usuario autenticado y sus paneles/compras #}
+                        <li class="submenu user-menu">
+                            <a href="#">Hola, {{ user.nombre|default:user.email }} <i class="fas fa-caret-down"></i></a>
+                            <ul>
+                                {% if user.id_tipo_usuario %} 
+                                    {% if user.id_tipo_usuario.id_tipo_usuario == 2 %} {# Nutricionista #}
+                                        <li><a href="{% url 'panel_nutricionista' %}">Panel Nutricionista</a></li>
+                                    {% elif user.id_tipo_usuario.id_tipo_usuario == 3 %} {# Preparador Físico #}
+                                        <li><a href="{% url 'panel_preparador_fisico' %}">Panel PF</a></li>
+                                    {% elif user.id_tipo_usuario.id_tipo_usuario == 4 %} {# Cliente #}
+                                        <li><a href="{% url 'mis_servicios' %}">Mis Compras</a></li>
+                                    {% endif %}
+                                {% endif %}
+                                <li><a href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}">Iniciar Sesión</a></li>
+                        <li><a href="{% url 'register' %}">Registrarse</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </header>
 
-    {# SCRIPT PARA EL CONTADOR DEL CARRITO - Colócalo antes de </body> para que el DOM esté cargado #}
-    <script>
-        function getCarritoCount() {
-            const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-            let totalItems = 0;
-            carrito.forEach(item => {
-                totalItems += item.cantidad;
-            });
-            return totalItems;
-        }
+        {# Contenedor para mensajes de Django #}
+        {% if messages %}
+            <div class="container mt-3"> {# Si usas clases de Bootstrap como 'container' y 'mt-3', asegúrate que Bootstrap esté cargado #}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
-        function updateCarritoCounter() {
-            const contadorElement = document.getElementById('carrito-contador');
-            if (contadorElement) {
-                contadorElement.textContent = `(${getCarritoCount()})`;
+        <main> {# Tu bloque de contenido principal #}
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <footer> {# Tu footer #}
+            <div class="container">
+                <span>&copy; 2024 SportFit. Todos los derechos reservados.</span>
+            </div>
+        </footer>
+
+        {# Script de Bootstrap (necesario para el menú desplegable y alertas) #}
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+        {# Script para el contador del carrito y manejo de submenús #}
+        <script>
+            function getCarritoCount() {
+                const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                let totalItems = 0;
+                carrito.forEach(item => {
+                    totalItems += item.cantidad;
+                });
+                return totalItems;
             }
-        }
 
-        // Se ejecuta cuando el DOM está completamente cargado
-        document.addEventListener('DOMContentLoaded', updateCarritoCounter);
+            function updateCarritoCounter() {
+                const contadorElement = document.getElementById('carrito-contador');
+                if (contadorElement) {
+                    contadorElement.textContent = `(${getCarritoCount()})`;
+                }
+            }
 
-        // Opcional: Si los productos se añaden a la página de productos (productos.html) y quieres
-        // que el contador en el navbar (base.html) se actualice sin recargar la página,
-        // puedes despachar un evento personalizado desde productos.html
-        // y escucharlo aquí.
-        // Ejemplo en productos.html después de localStorage.setItem:
-        // window.dispatchEvent(new Event('carritoActualizado'));
-        // Y aquí en base.html:
-        // window.addEventListener('carritoActualizado', updateCarritoCounter);
-        // Para tu configuración actual con localStorage, esto no es estrictamente necesario
-        // porque el contador se actualizará cada vez que se carga una nueva página.
-    </script>
-</body>
-</html>
+            document.addEventListener('DOMContentLoaded', updateCarritoCounter);
+            window.addEventListener('carritoUpdated', updateCarritoCounter);
+            
+            function dispatchCarritoUpdatedEvent() {
+                window.dispatchEvent(new Event('carritoUpdated'));
+            }
+
+            // JS para manejar los submenús (si no estás usando Bootstrap JavaScript para esto)
+            document.querySelectorAll('.submenu > a').forEach(item => {
+                item.addEventListener('click', function(event) {
+                    // Evita que el enlace de nivel superior navegue
+                    event.preventDefault(); 
+                    // Alterna la visibilidad del submenú
+                    this.parentElement.classList.toggle('active'); 
+                });
+            });
+        </script>
+        {% block extra_js %}{% endblock %} {# Para JS adicional en plantillas hijas #}
+    </body>
+    </html>

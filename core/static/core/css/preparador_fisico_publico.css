@@ -1,0 +1,85 @@
+/* core/static/core/css/preparador_fisico_publico.css */
+
+/* Estilos generales para el contenedor principal */
+.container.mt-5 {
+    padding-top: 3rem; /* Espacio extra en la parte superior */
+    padding-bottom: 3rem; /* Espacio extra en la parte inferior */
+}
+
+h1, h2 {
+    color: #28a745; /* Un verde deportivo para los títulos */
+    margin-bottom: 1.5rem;
+    font-weight: 700; /* Negrita para los títulos */
+    text-align: center; /* Centrar títulos */
+}
+
+p {
+    color: #555;
+    line-height: 1.6;
+}
+
+hr {
+    border-top: 2px solid #e0e0e0;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Estilos para las tarjetas de servicio */
+.card {
+    border: 1px solid #ddd;
+    border-radius: 10px; /* Bordes redondeados */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transición suave al pasar el mouse */
+    background-color: #ffffff; /* Fondo blanco */
+}
+
+.card:hover {
+    transform: translateY(-5px); /* Pequeño levantamiento al pasar el mouse */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+}
+
+.card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribuye el contenido verticalmente */
+}
+
+.card-title {
+    color: #28a745; /* Verde para el título del servicio */
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.card-text {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.card-text strong {
+    color: #333;
+}
+
+/* Estilo para el botón de adquirir servicio */
+.btn-success {
+    background-color: #28a745; /* Un verde vibrante para "Adquirir" */
+    border-color: #28a745;
+    font-weight: 600;
+    margin-top: 1rem; /* Espacio superior para el botón */
+    transition: background-color 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: #218838; /* Un verde más oscuro al pasar el mouse */
+    border-color: #1e7e34;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 200px; /* Altura fija para las imágenes */
+    object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}

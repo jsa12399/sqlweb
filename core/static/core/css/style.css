@@ -401,3 +401,125 @@ nav ul.menu li.submenu ul li a:hover {
         .producto-card .add-to-cart-btn:hover {
             background-color: #218838;
         }
+
+/* core/css/style.css */
+
+/* Estilos generales de la navegación */
+nav ul.menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex; /* Para que los ítems del menú principal estén en fila */
+    justify-content: flex-end; /* Alinea los ítems a la derecha si es necesario */
+    align-items: center;
+}
+
+nav ul.menu li {
+    position: relative; /* Necesario para posicionar los submenús */
+    margin-left: 20px; /* Espacio entre los ítems del menú principal */
+}
+
+nav ul.menu li a {
+    text-decoration: none;
+    color: #333; /* Color de tus enlaces */
+    padding: 10px 15px;
+    display: block;
+}
+
+nav ul.menu li a:hover {
+    background-color: #eee; /* Fondo al pasar el ratón */
+}
+
+/* Estilos para los submenús (ocultos por defecto) */
+.submenu ul {
+    display: none; /* Oculto por defecto */
+    position: absolute;
+    top: 100%; /* Se posiciona justo debajo del elemento padre */
+    left: 0;
+    background-color: #fff; /* Fondo del menú desplegable */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2); /* Sombra para que se vea como un menú */
+    min-width: 180px; /* Ancho mínimo del menú */
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.submenu ul li {
+    margin: 0; /* Sin margen para los ítems del submenú */
+}
+
+.submenu ul li a {
+    color: #333; /* Color de los enlaces del submenú */
+    padding: 10px 15px;
+    white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+}
+
+/* Mostrar submenú cuando el padre tiene la clase 'active' */
+.submenu.active > ul {
+    display: block;
+}
+
+/* Estilos para el carrito */
+.nav-item-carrito .carrito-link {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Espacio entre el icono y el texto/contador */
+    color: #007bff; /* Un color distintivo para el carrito */
+    font-weight: bold;
+}
+
+#carrito-contador {
+    background-color: #dc3545; /* Rojo de Bootstrap para insignias de notificaciones */
+    color: white;
+    border-radius: 50%; /* Redondeado para el contador */
+    padding: 2px 7px;
+    font-size: 0.75em;
+    vertical-align: super; /* Para que quede un poco más arriba */
+}
+
+/* Estilos generales para el header, main, footer (si quieres mantenerlos) */
+header {
+    background-color: #f8f9fa; /* Un color de fondo claro para el header */
+    padding: 10px 0;
+    border-bottom: 1px solid #e7e7e7;
+    display: flex;
+    justify-content: center; /* Centra el nav dentro del header */
+}
+
+nav {
+    width: 90%; /* Ajusta el ancho de tu navegación */
+    max-width: 1200px; /* Ancho máximo para la navegación */
+    display: flex;
+    justify-content: flex-end; /* Alinea el menú a la derecha si no hay logo */
+}
+
+/* Si tienes un logo, podrías reorganizar la navegación así: */
+/*
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f8f9fa;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+
+*/
+
+main {
+    padding: 20px;
+    min-height: calc(100vh - 150px); /* Ejemplo para que el footer se quede abajo */
+}
+
+footer {
+    background-color: #343a40; /* Fondo oscuro */
+    color: #fff;
+    text-align: center;
+    padding: 15px 0;
+}

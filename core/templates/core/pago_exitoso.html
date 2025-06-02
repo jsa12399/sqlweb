@@ -1,0 +1,18 @@
+{# core/templates/core/pago_exitoso.html #}
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Pago Exitoso{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">¡Pago Exitoso!</h4>
+        <p>Tu compra se ha procesado correctamente. Recibirás un correo de confirmación con los detalles.</p>
+        <hr>
+        <p class="mb-0">Gracias por preferir nuestros servicios y productos.</p>
+    </div>
+    <a href="{% url 'index' %}" class="btn btn-primary mt-3">Volver al Inicio</a>
+    <a href="{% url 'mis_servicios' %}" class="btn btn-info mt-3">Ver mis Compras</a>
+</div>
+{% endblock %}

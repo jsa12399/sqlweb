@@ -1,6 +1,6 @@
-{# Integracion_Proyecto/core/templates/core/nutricionista_servicio_confirm_delete.html #}
+{# Integracion_Proyecto/core/templates/core/preparador_servicio_confirm_delete.html #}
 
-{% extends 'core/base_nutricionista.html' %}
+{% extends 'core/base_preparador_fisico.html' %}
 {% load static %}
 
 {% block title %}Confirmar Eliminación{% endblock %}
@@ -14,7 +14,7 @@
         <form method="post">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger me-2">Sí, Eliminar</button>
-            <a href="{% url 'nutricionista_servicios_list' %}" class="btn btn-secondary">Cancelar</a>
+            <a href="{% url 'preparador_servicios_list' %}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>
 {% endblock %}

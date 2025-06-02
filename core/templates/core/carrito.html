@@ -1,94 +1,201 @@
+{# core/templates/core/carrito.html #}
 {% extends 'core/base.html' %}
 {% load static %}
 {% load humanize %}
 
-{% block title %}Carrito de Compras{% endblock %}
-
-{% block extra_css %}
-    <style>
-        .cart-item-type {
-            font-size: 0.8em;
-            color: #777;
-            margin-left: 5px;
-        }
-    </style>
-{% endblock extra_css %} {# <-- ¡ASEGÚRATE DE QUE ESTA LÍNEA ESTÁ AQUÍ! #}
+{% block title %}Mi Carrito{% endblock %}
 
 {% block content %}
-    <h1 style="text-align: center; margin-top: 2rem; color: #1e3a8a;">Tu Carrito de Compras</h1>
+<div class="container mt-5">
+    <h1>Tu Carrito de Compras</h1>
 
-    <div id="carrito-display" style="max-width: 800px; margin: 2rem auto; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-        <ul id="carrito-lista" style="list-style: none; padding: 0;">
-            {# Los ítems del carrito se cargarán aquí con JavaScript #}
-        </ul>
-        <div id="carrito-total" style="font-size: 1.2rem; font-weight: bold; margin-top: 1rem; text-align: right;">
-            {# El total se cargará aquí con JavaScript #}
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
-            <button id="limpiar-carrito-btn" style="padding: 0.8rem 1.5rem; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem;">Vaciar Carrito</button>
-            <button id="continuar-comprando-btn" 
-                    data-productos-url="{% url 'productos' %}" 
-                    style="padding: 0.8rem 1.5rem; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem;">
-                Continuar Comprando
-            </button>
-        </div>
+    <div id="cart-empty-message" style="display: none;">
+        <p class="alert alert-info">Tu carrito está vacío.</p>
+        <a href="{% url 'productos' %}" class="btn btn-primary">Ver Productos</a>
+        <a href="{% url 'cliente_ver_servicios' %}" class="btn btn-secondary">Ver Servicios</a>
     </div>
 
-    <script>
-        let carritoGlobal = [];
+    <div id="cart-content">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Ítem</th>
+                    <th>Tipo</th>
+                    <th>Precio Unitario</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="cart-items-table-body">
+                {# Los ítems del carrito se insertarán aquí con JavaScript #}
+            </tbody>
+        </table>
 
-        function actualizarCarritoDisplay() {
-            const lista = document.getElementById('carrito-lista');
-            const totalElem = document.getElementById('carrito-total');
-            
-            let total = 0;
-            lista.innerHTML = ''; 
-            carritoGlobal = JSON.parse(localStorage.getItem('carrito')) || [];
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <h4 class="me-3">Total del Carrito: <span id="cart-total-display"></span></h4>
+            <button id="clear-cart-btn" class="btn btn-danger me-2">Vaciar Carrito</button>
+            <a href="{% url 'checkout' %}" id="checkout-btn" class="btn btn-success">Proceder al Pago</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-            if (carritoGlobal.length === 0) {
-                lista.innerHTML = '<p>Tu carrito está vacío.</p>';
-                totalElem.textContent = 'Total: $0';
-                return;
-            }
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cartItemsTableBody = document.getElementById('cart-items-table-body');
+        const cartTotalDisplay = document.getElementById('cart-total-display');
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const cartEmptyMessage = document.getElementById('cart-empty-message');
+        const cartContent = document.getElementById('cart-content');
 
-            carritoGlobal.forEach(item => {
-                const li = document.createElement('li');
-                const subtotal = item.precio * item.cantidad;
-                total += subtotal;
-                li.style.cssText = "display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #eee;";
-                li.innerHTML = `
-                    <span>
-                        ${item.nombre} (x${item.cantidad}) 
-                        <span class="cart-item-type">(${item.type === 'producto' ? 'Producto' : 'Servicio'})</span>
-                    </span>
-                    <span>$${subtotal.toLocaleString('es-CL')}</span>
-                `;
-                lista.appendChild(li);
-            });
-
-            totalElem.textContent = `Total: $${total.toLocaleString('es-CL')}`;
+        function formatCurrency(value) {
+            // Formatea el número a moneda chilena (separador de miles: punto, decimal: coma)
+            return `$${value.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         }
 
-        document.getElementById('limpiar-carrito-btn').addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+        function renderCart() {
+            let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            cartItemsTableBody.innerHTML = ''; // Limpiar tabla
+            let total = 0;
+
+            if (carrito.length === 0) {
+                cartEmptyMessage.style.display = 'block';
+                cartContent.style.display = 'none';
+                dispatchCarritoUpdatedEvent(); // Asegura que el contador del navbar se actualice a 0
+                return;
+            } else {
+                cartEmptyMessage.style.display = 'none';
+                cartContent.style.display = 'block';
+            }
+
+            carrito.forEach((item, index) => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+
+                const row = `
+                    <tr>
+                        <td>${item.nombre}</td>
+                        <td>${item.type === 'producto' ? 'Producto' : 'Servicio'}</td>
+                        <td>${formatCurrency(item.precio)}</td>
+                        <td>
+                            <div class="input-group" style="width: 150px;">
+                                <button class="btn btn-outline-secondary btn-sm decrease-quantity" data-index="${index}">-</button>
+                                <input type="number" class="form-control form-control-sm text-center cart-quantity-input" value="${item.cantidad}" min="1" data-index="${index}" style="width: 60px;">
+                                <button class="btn btn-outline-secondary btn-sm increase-quantity" data-index="${index}">+</button>
+                            </div>
+                        </td>
+                        <td>${formatCurrency(subtotal)}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm remove-from-cart-btn" data-index="${index}">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+                cartItemsTableBody.innerHTML += row;
+            });
+
+            cartTotalDisplay.textContent = formatCurrency(total);
+            dispatchCarritoUpdatedEvent(); // Actualizar contador del navbar
+            attachEventListeners(); // Adjuntar eventos a los nuevos botones
+        }
+
+        function attachEventListeners() {
+            // Eliminar
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.onclick = function() {
+                    const index = parseInt(this.dataset.index);
+                    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                    carrito.splice(index, 1); // Eliminar el ítem
+                    localStorage.setItem('carrito', JSON.stringify(carrito));
+                    renderCart(); // Volver a renderizar
+                };
+            });
+
+            // Disminuir cantidad
+            document.querySelectorAll('.decrease-quantity').forEach(button => {
+                button.onclick = function() {
+                    const index = parseInt(this.dataset.index);
+                    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                    if (carrito[index].cantidad > 1) {
+                        carrito[index].cantidad -= 1;
+                        localStorage.setItem('carrito', JSON.stringify(carrito));
+                        renderCart();
+                    } else {
+                        // Si la cantidad llega a 0, pregunta si quiere eliminar
+                        if (confirm(`¿Quieres eliminar "${carrito[index].nombre}" del carrito?`)) {
+                            carrito.splice(index, 1);
+                            localStorage.setItem('carrito', JSON.stringify(carrito));
+                            renderCart();
+                        }
+                    }
+                };
+            });
+
+            // Aumentar cantidad
+            document.querySelectorAll('.increase-quantity').forEach(button => {
+                button.onclick = function() {
+                    const index = parseInt(this.dataset.index);
+                    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                    const item = carrito[index];
+
+                    // Solo para productos, verificar stock
+                    if (item.type === 'producto') {
+                        // Aquí deberíamos tener el stock real del producto, pero como solo lo tenemos en la DB
+                        // y no lo pasamos al JS del carrito (para mantenerlo ligero),
+                        // la validación de stock final se hará en el backend durante el checkout.
+                        // Por ahora, solo permitimos incrementar.
+                        // Si quisieras stock real aquí, necesitarías hacer una petición AJAX a tu backend.
+                        // Para esta demostración, no lo haremos, la validación estricta va en el checkout.
+                        item.cantidad += 1;
+                        localStorage.setItem('carrito', JSON.stringify(carrito));
+                        renderCart();
+                    } else { // Para servicios, no hay stock que limitar
+                        item.cantidad += 1;
+                        localStorage.setItem('carrito', JSON.stringify(carrito));
+                        renderCart();
+                    }
+                };
+            });
+
+            // Input de cantidad (manual)
+            document.querySelectorAll('.cart-quantity-input').forEach(input => {
+                input.onchange = function() {
+                    const index = parseInt(this.dataset.index);
+                    let newQuantity = parseInt(this.value);
+                    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                    const item = carrito[index];
+
+                    if (isNaN(newQuantity) || newQuantity < 1) {
+                        newQuantity = 1; // Mínimo 1
+                    }
+
+                    if (item.type === 'producto') {
+                        // Aquí también se hace la validación de stock estricta en el backend
+                        item.cantidad = newQuantity;
+                        localStorage.setItem('carrito', JSON.stringify(carrito));
+                        renderCart();
+                    } else {
+                        item.cantidad = newQuantity;
+                        localStorage.setItem('carrito', JSON.stringify(carrito));
+                        renderCart();
+                    }
+                };
+            });
+        }
+
+        // Vaciar carrito
+        clearCartBtn.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que quieres vaciar tu carrito?')) {
                 localStorage.removeItem('carrito');
-                actualizarCarritoDisplay(); 
-                window.dispatchEvent(new Event('carritoUpdated'));
+                renderCart();
+                alert('Tu carrito ha sido vaciado.');
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            actualizarCarritoDisplay(); 
-
-            const continuarComprandoBtn = document.getElementById('continuar-comprando-btn');
-            if (continuarComprandoBtn) { 
-                const productosUrl = continuarComprandoBtn.dataset.productosUrl; 
-                
-                continuarComprandoBtn.addEventListener('click', () => {
-                    window.location.href = productosUrl; 
-                });
-            }
-        });
-    </script>
-{% endblock content %} 
+        // Renderizar el carrito al cargar la página
+        renderCart();
+    });
+</script>
+{% endblock %}

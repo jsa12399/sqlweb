@@ -1,10 +1,10 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Panel de Nutricionista{% endblock %}
+{% block title %}Panel de Preparador Físico{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Bienvenido, {{ user.nombre }} {{ user.apellido }} (Nutricionista)</h2>
+    <h2 class="mb-4">Bienvenido, {{ user.nombre }} {{ user.apellido }} (Preparador Físico)</h2>
 
     {% if messages %}
         <div class="messages">
@@ -24,9 +24,9 @@
                     <h5 class="mb-0">Gestión de Servicios</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">Administra los servicios de nutrición que ofreces a los clientes.</p>
-                    <a href="{% url 'nutricionista_servicios_list' %}" class="btn btn-primary">Ver Mis Servicios</a>
-                    <a href="{% url 'nutricionista_servicio_crear' %}" class="btn btn-outline-primary ms-2">Crear Nuevo Servicio</a>
+                    <p class="card-text">Administra los servicios que ofreces a los clientes.</p>
+                    <a href="{% url 'preparador_servicios_list' %}" class="btn btn-primary">Ver Mis Servicios</a>
+                    <a href="{% url 'preparador_servicio_crear' %}" class="btn btn-outline-primary ms-2">Crear Nuevo Servicio</a>
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">Consulta las instancias de servicios que tienes programadas y sus clientes asociados.</p>
-                    <a href="{% url 'nutricionista_instancias_programadas' %}" class="btn btn-success">Ver Instancias Programadas</a>
+                    <a href="{% url 'preparador_instancias_programadas' %}" class="btn btn-success">Ver Instancias Programadas</a>
                 </div>
             </div>
         </div>

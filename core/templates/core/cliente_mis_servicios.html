@@ -27,6 +27,7 @@
                         {% for adquisicion in mis_adquisiciones %}
                             <tr>
                                 <td>{{ adquisicion.id_instancia_servicio.id_servicio.nombre_servicio }}</td>
+                                <td>{{ adquisicion.id_instancia_servicio.id_servicio.nombre_servicio }}</td>
                                 <td>{{ adquisicion.id_instancia_servicio.id_proveedor_servicio.get_full_name }}</td>
                                 <td>{{ adquisicion.fecha_adquisicion|date:"d M Y H:i" }}</td>
                                 <td><span class="badge 

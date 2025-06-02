@@ -30,6 +30,8 @@ SECRET_KEY = 'django-insecure-!rg+*xwv-7z#qr5@%hxr&rd=6)kmgde+8li9^rnq_a+d+%z*p)
 
 DEBUG = True
 
+DISCOUNT_API_URL = "https://api-sabor-latino-chile.onrender.com/clientes"
+
 ALLOWED_HOSTS = []
 
 # Apps instaladas
@@ -142,3 +144,42 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+PAYPAL_API_URL = "https://api-m.sandbox.paypal.com" # Para pruebas en Sandbox
+PAYPAL_CLIENT_ID = "ASv3Tlw7XzUwvewH2xz9Yd3OJxVj9YbGayAebI4AvdabehIiOtbkR5vFqAbT8lAMTD32ihppxzIIcF2P"
+PAYPAL_CLIENT_SECRET = "EIJsXoyfLc5cnhKXMKRarDL4xjaSfvq_ErpUmbZyAGTQKAWoMFhQm0AgmbxS1vS682jiElUqphs6x1ph"
+
+import paypalrestsdk
+
+paypalrestsdk.configure({
+    "mode": "sandbox",  # o "live" para producción
+    "client_id": "ASv3Tlw7XzUwvewH2xz9Yd3OJxVj9YbGayAebI4AvdabehIiOtbkR5vFqAbT8lAMTD32ihppxzIIcF2P",
+    "client_secret": "EIJsXoyfLc5cnhKXMKRarDL4xjaSfvq_ErpUmbZyAGTQKAWoMFhQm0AgmbxS1vS682jiElUqphs6x1ph"
+})
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'core.views': {  # Logger específico para tus vistas en la app 'core'
+            'handlers': ['console'],
+            'level': 'INFO',  # O 'DEBUG' si quieres ver más detalles
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
