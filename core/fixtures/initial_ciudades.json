@@ -1,0 +1,24 @@
+[
+  {
+    "model": "core.ciudad",
+    "pk": 1,
+    "fields": {
+      "nombre": "Santiago"
+    }
+  },
+  {
+    "model": "core.ciudad",
+    "pk": 2,
+    "fields": {
+      "nombre": "Valparaíso"
+    }
+  },
+  {
+    "model": "core.ciudad",
+    "pk": 3,
+    "fields": {
+      "nombre": "Concepción"
+    }
+  }
+ 
+]

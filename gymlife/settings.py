@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import os
-import oracledb # Importa oracledb aquí
+ # Importa oracledb aquí
 
 # Si tienes problemas con Instant Client o quieres forzar el modo Thin,
 # puedes inicializar oracledb aquí.
@@ -12,16 +12,16 @@ import oracledb # Importa oracledb aquí
 # En la mayoría de los casos, si usas `oracledb` sin Instant Client,
 # no necesitas `oracledb.init_oracle_client()` explícitamente.
 # La remoción de 'thin_mode' de OPTIONS es la clave.
-try:
+#try:
     # Esto es más para casos donde el modo Thick es necesario y el cliente no está en PATH
     # Si estás usando el modo Thin (sin Instant Client), generalmente NO es necesario.
     # oracledb.init_oracle_client()
-    pass
-except oracledb.Error as e:
+    #pass
+#except oracledb.Error as e:
     # Puedes manejar el error si oracledb no puede encontrar las librerías cliente,
     # aunque para el modo Thin no suele ser un problema de este tipo.
-    print(f"Error al inicializar oracledb: {e}")
-    pass
+    #print(f"Error al inicializar oracledb: {e}")
+    #pass
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,8 +36,8 @@ ALLOWED_HOSTS = []
 
 # Apps instaladas
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
+    'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -104,19 +104,14 @@ WSGI_APPLICATION = 'gymlife.wsgi.application'
 # Base de datos
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'XE', # Confirma que 'XE' es tu SID o Service Name
-        'USER': 'WEBFIT', # Tu nombre de usuario de Oracle
-        'PASSWORD': 'hola123', # Tu contraseña de Oracle
-        'HOST': 'localhost', # La IP o nombre de host de tu servidor Oracle
-        'PORT': '1521', # El puerto de tu base de datos Oracle (por defecto 1521)
+        'ENGINE': 'mssql',
+        'NAME': 'WEBFIT_DB',
+        'HOST': r'.\SQLEXPRESS', # Usa r'' para cadena sin procesar
+        'PORT': '',
         'OPTIONS': {
-            # Hemos quitado 'encoding' y 'thin_mode' de aquí porque causan TypeError
-            # oracledb usa UTF-8 por defecto en modo Thin.
-            # Si tu base de datos está en otro charset o tienes problemas con caracteres,
-            # considera configurar la variable de entorno NLS_LANG en tu sistema.
-            # Ejemplo (para Windows, antes de ejecutar manage.py): set NLS_LANG=SPANISH_SPAIN.AL32UTF8
-            # Para Linux/macOS: export NLS_LANG=SPANISH_SPAIN.AL32UTF8
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'MARS_Connection': True,
+            'Trusted_Connection': 'yes',
         }
     }
 }

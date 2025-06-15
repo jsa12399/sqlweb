@@ -1,0 +1,58 @@
+[
+  {
+    "model": "core.producto",
+    "pk": 1,
+    "fields": {
+      "nombre": "Proteína Whey Premium",
+      "descripcion": "Proteína de suero de leche de alta calidad para recuperación muscular.",
+      "stock": 50,
+      "precio_unitario": "35000.00",
+      "id_categoria": 1
+    }
+  },
+  {
+    "model": "core.producto",
+    "pk": 2,
+    "fields": {
+      "nombre": "Mancuernas Ajustables 20kg",
+      "descripcion": "Juego de mancuernas ajustables para entrenamiento de fuerza en casa.",
+      "stock": 20,
+      "precio_unitario": "80000.00",
+      "id_categoria": 2
+    }
+  },
+  {
+    "model": "core.producto",
+    "pk": 3,
+    "fields": {
+      "nombre": "Creatina Monohidratada 500g",
+      "descripcion": "Suplemento para mejorar la fuerza y la resistencia durante el ejercicio.",
+      "stock": 30,
+      "precio_unitario": "25000.00",
+      "id_categoria": 1
+    }
+  },
+  {
+    "model": "core.producto",
+    "pk": 4,
+    "fields": {
+      "nombre": "Banda de Resistencia Set",
+      "descripcion": "Set de 5 bandas de resistencia para diversos ejercicios.",
+      "stock": 40,
+      "precio_unitario": "15000.00",
+      "id_categoria": 3
+    }
+  },
+  {
+    "model": "core.producto",
+    "pk": 5,
+    "fields": {
+      "nombre": "Proteína Vegana",
+      "descripcion": "Proteína en polvo a base de plantas, ideal para dietas veganas.",
+      "stock": 25,
+      "precio_unitario": "40000.00",
+      "id_categoria": 1
+    }
+  }
+  
+]

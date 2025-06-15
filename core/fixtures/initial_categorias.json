@@ -1,0 +1,24 @@
+[
+  {
+    "model": "core.categoria",
+    "pk": 1,
+    "fields": {
+      "nombre_categoria": "Suplementos"
+    }
+  },
+  {
+    "model": "core.categoria",
+    "pk": 2,
+    "fields": {
+      "nombre_categoria": "Equipamiento"
+    }
+  },
+  {
+    "model": "core.categoria",
+    "pk": 3,
+    "fields": {
+      "nombre_categoria": "Accesorios"
+    }
+  }
+
+]

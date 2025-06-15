@@ -1,0 +1,30 @@
+[
+  {
+    "model": "core.tipousuario",
+    "pk": 1,
+    "fields": {
+      "tipo_usuario": "Administrador"
+    }
+  },
+  {
+    "model": "core.tipousuario",
+    "pk": 2,
+    "fields": {
+      "tipo_usuario": "Nutricionista"
+    }
+  },
+  {
+    "model": "core.tipousuario",
+    "pk": 3,
+    "fields": {
+      "tipo_usuario": "Preparador Físico"
+    }
+  },
+  {
+    "model": "core.tipousuario",
+    "pk": 4,
+    "fields": {
+      "tipo_usuario": "Cliente"
+    }
+  }
+]

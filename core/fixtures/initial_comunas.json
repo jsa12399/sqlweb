@@ -1,0 +1,51 @@
+[
+  {
+    "model": "core.comuna",
+    "pk": 1,
+    "fields": {
+      "nombre": "La Florida",
+      "id_ciudad": 1
+    }
+  },
+  {
+    "model": "core.comuna",
+    "pk": 2,
+    "fields": {
+      "nombre": "Maipú",
+      "id_ciudad": 1
+    }
+  },
+  {
+    "model": "core.comuna",
+    "pk": 3,
+    "fields": {
+      "nombre": "Las Condes",
+      "id_ciudad": 1
+    }
+  },
+  {
+    "model": "core.comuna",
+    "pk": 4,
+    "fields": {
+      "nombre": "Providencia",
+      "id_ciudad": 1
+    }
+  },
+  {
+    "model": "core.comuna",
+    "pk": 5,
+    "fields": {
+      "nombre": "Viña del Mar",
+      "id_ciudad": 2
+    }
+  },
+  {
+    "model": "core.comuna",
+    "pk": 6,
+    "fields": {
+      "nombre": "Valparaíso",
+      "id_ciudad": 2
+    }
+  }
+ 
+]

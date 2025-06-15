@@ -76,13 +76,7 @@ def is_cliente(user):
     return user.is_authenticated and hasattr(user, 'id_tipo_usuario') and user.id_tipo_usuario_id == 4
 
 
-
-# --- Vistas del Panel del Preparador Físico (Manteniendo la estructura original que tenías) ---
-# Nota: Los nombres de estas vistas (panel_nutricionista, lista_servicios_pf, etc.)
-# sugieren que estaban siendo reutilizadas o tenían un origen confuso con el rol de nutricionista.
-# He mantenido los nombres que tenías para no alterar tus URLs o plantillas.
-
-
+# --- Vistas del Panel del Preparador Físico ---
 
 @login_required(login_url='login')
 @user_passes_test(is_preparador_fisico, login_url='index')
@@ -90,7 +84,8 @@ def preparador_servicios_list(request):
     """Muestra una lista de los servicios ofrecidos por el preparador físico autenticado."""
     mis_servicios = Servicio.objects.filter(
         id_proveedor_servicio=request.user,
-        id_proveedor_servicio__id_tipo_usuario__tipo_usuario='Preparador Físico'
+        # No es necesario filtrar por tipo_usuario aquí si el decorador ya lo garantiza.
+        # id_proveedor_servicio__id_tipo_usuario__tipo_usuario='Preparador Físico' 
     ).order_by('nombre_servicio')
     context = {
         'mis_servicios': mis_servicios
@@ -105,14 +100,20 @@ def preparador_servicio_crear(request):
         if form.is_valid():
             servicio = form.save(commit=False)
             servicio.id_proveedor_servicio = request.user
-            # Asignar el Tipo de Servicio "Preparador Físico"
-            tipo_servicio_pf = TipoUsuario.objects.get(tipo_usuario='Preparador Físico') # Asegúrate de que existe este tipo en tu DB
-            servicio.id_tipo_servicio = tipo_servicio_pf
+            
+            # --- ATENCIÓN: CORRECCIÓN CRÍTICA ---
+            # El modelo Servicio NO tiene un campo 'id_tipo_servicio'.
+            # El tipo de usuario está asociado al 'id_proveedor_servicio' (que es un Usuario).
+            # Esta línea causaría un error. Por lo tanto, la eliminamos.
+            # servicio.id_tipo_servicio = tipo_servicio_pf 
+            # Si necesitas asociar un "tipo de servicio" a un servicio, tendrías que añadir un nuevo FK en el modelo Servicio.
+            
             servicio.save()
             messages.success(request, 'Servicio de preparación física creado exitosamente.')
             return redirect('preparador_servicios_list')
         else:
             messages.error(request, 'Error al crear el servicio. Por favor, revisa los datos.')
+            print(f"DEBUG: Errores del formulario: {form.errors}") # Ayuda para depurar errores de formulario
     else:
         form = ServicioForm()
     return render(request, 'core/preparador_servicio_form.html', {'form': form})
@@ -129,6 +130,7 @@ def preparador_servicio_editar(request, id_servicio):
             return redirect('preparador_servicios_list')
         else:
             messages.error(request, 'Error al actualizar el servicio. Por favor, revisa los datos.')
+            print(f"DEBUG: Errores del formulario: {form.errors}")
     else:
         form = ServicioForm(instance=servicio)
     return render(request, 'core/preparador_servicio_form.html', {'form': form, 'servicio': servicio})
@@ -151,16 +153,12 @@ def preparador_servicio_eliminar(request, id_servicio):
     return render(request, 'core/preparador_servicio_confirm_delete.html', {'servicio': servicio})
 
 
-
 @login_required
 @user_passes_test(is_preparador_fisico, login_url='index')
 def preparador_instancias_programadas(request):
     """Muestra una lista de las instancias de servicio programadas para el preparador físico autenticado."""
     instancias = InstanciaServicio.objects.filter(
         id_proveedor_servicio=request.user,
-        # ELIMINAMOS LA LÍNEA PROBLEMÁTICA AQUÍ:
-        # id_servicio__id_tipo_servicio__tipo_usuario='Preparador Físico'
-        # Porque el decorador ya asegura que request.user es un preparador físico.
     ).select_related('id_servicio', 'id_proveedor_servicio').order_by('fecha_hora_programada')
 
     # Para cargar los clientes que adquirieron el servicio (y su RUT)
@@ -201,16 +199,16 @@ def nutricionista_publica(request):
     servicios_a_mostrar = Servicio.objects.none()
 
     try:
-        tipo_nutricionista = TipoUsuario.objects.get(id_tipo_usuario=2)
+        tipo_nutricionista = TipoUsuario.objects.get(id_tipo_usuario=2) # ID 2 para Nutricionista
         ids_nutricionistas = Usuario.objects.filter(id_tipo_usuario=tipo_nutricionista).values_list('id_usuario', flat=True)
 
         servicios_a_mostrar = Servicio.objects.filter(
             id_proveedor_servicio__in=ids_nutricionistas,
-            disponible='S'
+            disponible='S' # 'S' para disponible en SQL Server
         ).order_by('id_proveedor_servicio__nombre', 'nombre_servicio')
 
     except TipoUsuario.DoesNotExist:
-        messages.error(request, "Error: El Tipo de Usuario 'Nutricionista' no existe en la base de datos.")
+        messages.error(request, "Error: El Tipo de Usuario 'Nutricionista' (ID 2) no existe en la base de datos.")
     except Exception as e:
         messages.error(request, f"Error al cargar servicios de nutricionistas: {e}")
 
@@ -224,11 +222,11 @@ def nutricionista_publica(request):
 def preparadorfisico_publica(request):
     """Muestra los servicios disponibles ofrecidos por preparadores físicos."""
     try:
-        tipo_pf = TipoUsuario.objects.get(id_tipo_usuario=3)
+        tipo_pf = TipoUsuario.objects.get(id_tipo_usuario=3) # ID 3 para Preparador Físico
         ids_pf = Usuario.objects.filter(id_tipo_usuario=tipo_pf).values_list('id_usuario', flat=True)
         servicios = Servicio.objects.filter(
             id_proveedor_servicio__in=ids_pf,
-            disponible='S'
+            disponible='S' # 'S' para disponible en SQL Server
         ).order_by('id_proveedor_servicio__nombre', 'nombre_servicio')
 
         context = {
@@ -236,13 +234,14 @@ def preparadorfisico_publica(request):
             'tasa_cambio': TASA_CAMBIO_USD_CLP
         }
     except TipoUsuario.DoesNotExist:
-        messages.error(request, "Error: El Tipo de Usuario 'Preparador Físico' no existe en la base de datos.")
+        messages.error(request, "Error: El Tipo de Usuario 'Preparador Físico' (ID 3) no existe en la base de datos.")
         context = {'servicios_preparador_fisico': []}
     except Exception as e:
         messages.error(request, f"Error al cargar servicios de preparadores físicos: {e}")
         context = {'servicios_preparador_fisico': []}
 
     return render(request, 'core/preparadorfisico.html', context)
+
 @login_required(login_url='login')
 def ver_productos(request):
     """Muestra una lista de todos los productos disponibles."""
@@ -257,28 +256,53 @@ def carrito_view(request):
     """Renderiza la vista del carrito de compras (frontend-driven)."""
     return render(request, 'core/carrito.html')
 
-# core/views.py
-
-# ... (otras importaciones existentes) ...
-from django.conf import settings # <<--- ¡Asegúrate de que esta línea esté presente!
-
-# ... (el resto de tus funciones y vistas) ...
+# --- Funciones auxiliares para el proceso de compra ---
 def obtener_costo_envio_del_carrito():
-    # Lógica para calcular o recuperar el costo de envío.
-    # Puede ser un valor fijo, basado en el peso, la ubicación, etc.
-    return Decimal('5.00') # Ejemplo de costo de envío
+    """
+    Lógica para calcular o recuperar el costo de envío.
+    Puede ser un valor fijo, basado en el peso, la ubicación, etc.
+    """
+    return decimal.Decimal('5.00') # Ejemplo de costo de envío
+
+def check_rut_in_external_api(rut):
+    """
+    Simula la verificación de RUT en una API externa para aplicar descuentos.
+    En un entorno real, esta sería una llamada a una API de verdad.
+    """
+    # URL de tu API externa (ejemplo)
+    api_url = "https://tu-api-externa.com/check-rut/" 
+    try:
+        # Enviar el RUT a la API. Ajusta el payload según tu API.
+        response = requests.post(api_url, json={'rut': rut}, timeout=5) 
+        response.raise_for_status() # Lanza un HTTPError para códigos de estado 4xx/5xx
+
+        data = response.json()
+        # Asume que la API devuelve {'has_discount': True/False}
+        return data.get('has_discount', False) 
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error al conectar o recibir respuesta de la API externa para RUT {rut}: {e}")
+        # En producción, podrías loguear este error en un sistema de logs.
+        return False # Si hay un error, asume que no hay descuento para evitar problemas.
+    except json.JSONDecodeError:
+        print(f"Error: Respuesta no JSON de la API externa para RUT {rut}")
+        return False
 
 
 @login_required(login_url='login')
 @user_passes_test(is_cliente, login_url='index')
 def checkout_view(request):
-    paypal_client_id = settings.PAYPAL_CLIENT_ID # Asegúrate de que PAYPAL_CLIENT_ID esté en settings.py
+    paypal_client_id = getattr(settings, 'PAYPAL_CLIENT_ID', None) # Obtener de settings
+
+    if not paypal_client_id:
+        messages.error(request, "La clave de cliente de PayPal no está configurada en settings.py.")
+        return redirect('carrito_view') # O a una página de error
 
     if request.method == 'POST':
         try:
             cart_data = json.loads(request.POST.get('cart_data', '[]'))
             paypal_transaction_id = request.POST.get('paypal_transaction_id')
-            total_frontend = Decimal(request.POST.get('total_frontend', '0.00').replace(',', '.'))
+            total_frontend = decimal.Decimal(request.POST.get('total_frontend', '0.00').replace(',', '.'))
             payment_method_id = request.POST.get('payment_method_id')
 
             if not payment_method_id:
@@ -286,7 +310,7 @@ def checkout_view(request):
             if not cart_data:
                 return JsonResponse({'success': False, 'error': 'El carrito está vacío'}, status=400)
 
-            backend_total_sin_descuento = Decimal('0.00')
+            backend_total_sin_descuento = decimal.Decimal('0.00')
             has_physical_products = False # Bandera para saber si hay productos físicos
 
             for item in cart_data:
@@ -310,11 +334,11 @@ def checkout_view(request):
             if user_rut:
                 user_has_discount = check_rut_in_external_api(user_rut)
 
-            descuento_aplicado = Decimal('0.00')
+            descuento_aplicado = decimal.Decimal('0.00')
             backend_total_con_descuento = backend_total_sin_descuento
 
             if user_has_discount:
-                tasa_descuento = Decimal('0.20') # 20% de descuento
+                tasa_descuento = decimal.Decimal('0.20') # 20% de descuento
                 descuento_aplicado = backend_total_sin_descuento * tasa_descuento
                 backend_total_con_descuento -= descuento_aplicado
                 print(f"DEBUG: Descuento del {tasa_descuento * 100}% aplicado: -${descuento_aplicado}")
@@ -326,8 +350,9 @@ def checkout_view(request):
             print(f"Frontend Total: {total_frontend}")
 
             # Comparar con el total del frontend con una tolerancia
-            if abs(backend_total_con_descuento - total_frontend) > Decimal('0.01'): # Usa Decimal para comparación
-                return JsonResponse({'success': False, 'error': 'El total enviado no coincide con el calculado en el backend (con descuento)' if user_has_discount else 'El total enviado no coincide con el calculado en el backend'}, status=400)
+            if abs(backend_total_con_descuento - total_frontend) > decimal.Decimal('0.01'): # Usa Decimal para comparación
+                error_msg = 'El total enviado no coincide con el calculado en el backend (con descuento)' if user_has_discount else 'El total enviado no coincide con el calculado en el backend'
+                return JsonResponse({'success': False, 'error': error_msg}, status=400)
 
             with transaction.atomic():
                 try:
@@ -337,8 +362,8 @@ def checkout_view(request):
 
                 # 1. Crear la VentaProducto
                 venta = VentaProducto.objects.create(
-                    id_cliente=request.user, # Asumiendo que VentaProducto.id_cliente es un FK a tu modelo CustomUser/User de Django
-                    fecha_venta=timezone.now(),
+                    id_cliente=request.user, 
+                    fecha_venta=timezone.now().date(), # Usa .date() ya que fecha_venta es DateField
                     total_venta=backend_total_con_descuento,
                     id_mp=metodo_pago
                 )
@@ -349,6 +374,12 @@ def checkout_view(request):
                         product = Producto.objects.get(id_producto=item['id'])
                         quantity = item['cantidad']
                         DetalleCompra.objects.create(
+                            # id_detalle_boleta se autoincrementa si es AutoField o es manejado por la DB.
+                            # Si es un PK compuesto, necesitarías un valor único o asegurarte de que la DB lo maneje.
+                            # Para managed=False y PK compuestos, Django a veces necesita ayuda o lo infiere.
+                            # Si ID_DETALLE_BOLETA es INT PRIMARY KEY (no IDENTITY) y tú necesitas asignarlo,
+                            # entonces deberías tener una lógica para generar un ID único.
+                            # Como es INT IDENTITY(1,1) en el DDL de SQL Server, Django lo maneja automáticamente.
                             id_venta_producto=venta,
                             id_producto=product,
                             cantidad_adquirida=quantity,
@@ -367,47 +398,37 @@ def checkout_view(request):
                                 reservado='S',
                                 estado_instancia='Programado'
                             )
-                            # CRÍTICO: Si quieres asociar DetalleServicioAdquirido a VentaProducto,
-                            # el modelo DetalleServicioAdquirido DEBE tener un FK a VentaProducto.
-                            # Si no lo tiene, estos servicios no se "unirán" a la venta específica en tu DB.
                             DetalleServicioAdquirido.objects.create(
-                                id_cliente=request.user, # Asumiendo que id_cliente aquí también apunta a User
+                                id_cliente=request.user, 
                                 id_instancia_servicio=instancia,
                                 fecha_hora_adquisicion=timezone.now(),
                                 precio_pagado=servicio_obj.precio_servicio,
                                 id_mp=metodo_pago
-                                # Si tu modelo DetalleServicioAdquirido tiene id_venta_producto:
-                                # id_venta_producto=venta
+                                # id_venta_producto=venta # Esto causaría un error si el modelo DetalleServicioAdquirido no tiene este campo FK
                             )
 
                 # 3. CREAR EL REGISTRO DE ENVIO SI HAY PRODUCTOS FÍSICOS
-                # El código_rastreo y nombre_transportista se deben asignar *posteriormente*
-                # cuando el paquete sea realmente enviado y tengas esa info.
                 envio_creado = False
                 if has_physical_products:
                     try:
                         Envio.objects.create(
                             id_venta_producto=venta,
                             fecha_envio=timezone.localdate(),
-                            estado_envio="Pendiente", # Estado inicial del envío
-                            costo_envio=obtener_costo_envio_del_carrito(), # Tu función para calcular el costo
-                            # codigo_rastreo y nombre_transportista se dejan nulos aquí por ahora
+                            estado_envio="Pendiente", 
+                            costo_envio=obtener_costo_envio_del_carrito(), 
                         )
                         envio_creado = True
                     except Exception as e:
                         print(f"ERROR: No se pudo crear el registro de envío para la venta {venta.id_venta_producto}: {e}")
-                        # Si este error es crítico para tu negocio, puedes relanzar la excepción
-                        # para que la transacción se revierta:
-                        raise # Revertir la transacción si el envío no se puede crear
+                        # Revertir la transacción si el envío no se puede crear y es crítico:
+                        raise 
 
                 # VACÍA EL CARRITO (importante después de la transacción exitosa)
-                # Esto es crucial para que el carrito se borre después de una compra exitosa
                 request.session['cart'] = {}
                 request.session.modified = True
                 print("DEBUG: Carrito vaciado de la sesión.")
 
                 # --- ¡REDIRECCIÓN FINAL PARA TODOS LOS CASOS DE ÉXITO! ---
-                # Siempre redirige a pago_exitoso con el ID de la venta
                 redirect_url = reverse('pago_exitoso', args=[venta.id_venta_producto])
                 print(f"DEBUG CHECKOUT: Redirigiendo a: {redirect_url}")
                 return JsonResponse({'success': True, 'redirect_url': redirect_url})
@@ -423,6 +444,7 @@ def checkout_view(request):
         except Exception as e:
             # Captura cualquier otra excepción no manejada y la loguea/devuelve un error general
             print(f"ERROR FATAL al procesar el checkout: {e}")
+            messages.error(request, f'Ocurrió un error inesperado durante el proceso de compra. Por favor, inténtalo de nuevo. ({e})')
             return JsonResponse({'success': False, 'error': f'Error interno al procesar la compra: {e}'}, status=500)
 
     else: # GET request
@@ -437,21 +459,12 @@ def pago_exitoso_view(request, venta_id=None):
             # Asegúrate de que esta venta pertenezca al usuario logueado
             venta = VentaProducto.objects.get(id_venta_producto=venta_id, id_cliente=request.user)
 
-            # --- CORRECCIÓN AQUÍ ---
-            # Reemplaza .username con el campo correcto de tu modelo Usuario
-            # Por ejemplo, si tu modelo Usuario usa 'email' como identificador:
-            user_identifier = request.user.email
-            # O si tu modelo Usuario tiene un campo 'rut':
-            # user_identifier = request.user.rut
-            # O si usa el método get_username() de AbstractUser (que devolverá el campo definido en USERNAME_FIELD):
-            # user_identifier = request.user.get_username()
-
+            user_identifier = request.user.email # Tu USERNAME_FIELD
+            
             print(f"DEBUG PAGO_EXITOSO: Venta ID {venta_id} encontrada para el usuario {user_identifier}.")
         except VentaProducto.DoesNotExist:
             venta = None
-            # También corrige aquí para evitar el error si la venta no se encuentra
-            # o si request.user ya es anónimo por alguna razón (aunque login_required debería evitarlo)
-            user_identifier = request.user.email if hasattr(request.user, 'email') else 'Usuario Desconocido' # Fallback seguro
+            user_identifier = request.user.email if hasattr(request.user, 'email') else 'Usuario Desconocido' 
             print(f"DEBUG PAGO_EXITOSO: Venta ID {venta_id} NO encontrada o no pertenece al usuario {user_identifier}.")
 
     context = {
@@ -460,15 +473,12 @@ def pago_exitoso_view(request, venta_id=None):
     return render(request, 'core/pago_exitoso.html', context)
 
 
-
 # --- FUNCIONES Y LÓGICA PARA LA API DE AFTERSHIP ---
 def get_aftership_tracking_info(tracking_number, courier_slug):
     """
     Función para obtener información de seguimiento de AfterShip.
     Retorna la información del tracking o un error.
     """
-    # Asegúrate de que AFTERSHIP_API_KEY y AFTERSHIP_BASE_URL estén definidos en settings.py
-    # o aquí directamente si no los tienes en settings.
     aftership_api_key = getattr(settings, 'AFTERSHIP_API_KEY', None)
     aftership_base_url = getattr(settings, 'AFTERSHIP_BASE_URL', "https://api.aftership.com/v4/trackings")
 
@@ -480,21 +490,18 @@ def get_aftership_tracking_info(tracking_number, courier_slug):
         "Content-Type": "application/json"
     }
 
-    # Endpoint para obtener un tracking existente.
-    # AfterShip lo crea si no existe al hacer el GET, o lo actualiza si ya existe.
     url = f"{aftership_base_url}/{courier_slug}/{tracking_number}"
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status() # Lanza una excepción si el código de estado es un error (4xx o 5xx)
+        response.raise_for_status() 
         data = response.json()
 
         if data and 'data' in data and 'tracking' in data['data']:
-            return data['data']['tracking'], None # Retorna la info de tracking y no hay error
+            return data['data']['tracking'], None 
         elif data and 'meta' in data and data['meta'].get('code') == 404:
              return None, "Número de rastreo o transportista no encontrado en AfterShip."
         else:
-            # Manejo de otros posibles errores de la API o formato de respuesta inesperado
             return None, data.get('meta', {}).get('message', 'Respuesta inesperada de AfterShip.')
 
     except requests.exceptions.HTTPError as e:
@@ -520,23 +527,20 @@ def get_aftership_tracking_info(tracking_number, courier_slug):
 @user_passes_test(is_cliente, login_url='index')
 def mis_servicios_view(request):
     """Muestra los servicios que el usuario (cliente) ha adquirido."""
-    # Filtra los servicios adquiridos por el cliente actual y optimiza las consultas relacionadas.
     servicios_adquiridos = DetalleServicioAdquirido.objects.filter(
         id_cliente=request.user
     ).select_related(
-        
         'id_instancia_servicio__id_servicio',
         'id_instancia_servicio__id_proveedor_servicio',
-        'id_mp' # Para mostrar el método de pago si es necesario
-    ).order_by('-fecha_hora_adquisicion') # Ordena los más recientes primero
+        'id_mp' 
+    ).order_by('-fecha_hora_adquisicion') 
 
-    # También puedes obtener las compras de productos
     compras_productos = VentaProducto.objects.filter(
         id_cliente=request.user
     ).select_related(
-        'id_mp'
+        'id_mp', 'envio_asociado' # Añadido 'envio_asociado' para acceder al envío directamente
     ).prefetch_related(
-        'detallecompra_set__id_producto' # Para obtener los detalles de cada producto en la venta
+        'detallecompra_set__id_producto' 
     ).order_by('-fecha_venta')
 
     context = {
@@ -551,8 +555,10 @@ def login_view(request):
         if is_nutricionista(request.user):
             return redirect('panel_nutricionista')
         elif is_preparador_fisico(request.user):
-            return redirect('panel_preparador_fisico') # Corregido a panel_preparador_fisico
-        else: # Si es cliente o admin
+            return redirect('preparador_servicios_list') # Redirigido a su lista de servicios
+        elif is_administrador(request.user): # Si tienes un panel de admin
+            return redirect('admin:index') # O a tu panel de admin personalizado
+        else: # Si es cliente
             return redirect('index')
 
     if request.method == "POST":
@@ -566,7 +572,9 @@ def login_view(request):
             if is_nutricionista(user):
                 return redirect('panel_nutricionista')
             elif is_preparador_fisico(user):
-                return redirect('panel_preparador_fisico') # Corregido a panel_preparador_fisico
+                return redirect('preparador_servicios_list') # Redirigido a su lista de servicios
+            elif is_administrador(user):
+                return redirect('admin:index') # O a tu panel de admin personalizado
             else:
                 return redirect('index')
         else:
@@ -621,6 +629,7 @@ def register_view(request):
             return render(request, 'core/register.html', {'comunas': comunas, 'tipos_usuario': tipos_usuario, 'data': request.POST})
 
         try:
+            # Usa CustomUserManager.create_user para crear el usuario.
             user = Usuario.objects.create_user(
                 email=email,
                 password=password,
@@ -630,18 +639,23 @@ def register_view(request):
                 telefono=telefono,
                 direccion=direccion,
                 id_comuna=comuna,
-                id_tipo_usuario=selected_tipo_usuario,
+                id_tipo_usuario=selected_tipo_usuario, # Pasa el objeto TipoUsuario
+                is_active=True # Los nuevos usuarios están activos por defecto
             )
-            login(request, user)
-            messages.success(request, 'Registro exitoso. ¡Bienvenido!')
-            return redirect('index')
+            messages.success(request, 'Registro exitoso. ¡Ahora puedes iniciar sesión!')
+            return redirect('login') # Redirige a la página de login
         except Exception as e:
-            messages.error(request, f'Error al registrar el usuario: {e}')
-            print(f"DEBUG: Error al registrar: {e}") # Para depuración interna
+            messages.error(request, f'Error al crear el usuario: {e}.')
+            # Imprime el traceback completo para depuración en desarrollo
+            print(f"ERROR: {traceback.format_exc()}") 
             return render(request, 'core/register.html', {'comunas': comunas, 'tipos_usuario': tipos_usuario, 'data': request.POST})
 
     return render(request, 'core/register.html', {'comunas': comunas, 'tipos_usuario': tipos_usuario})
 
+# Define la URL base para la API externa (clientes Sabor Latino)
+URL_API_SABOR_LATINO = "https://api-sabor-latino-chile.onrender.com"
+
+# --- Vistas de Autenticación ---
 def custom_logout_view(request):
     """Cierra la sesión del usuario y lo redirige a la página de login."""
     logout(request)
@@ -655,9 +669,6 @@ def nutricionista_instancias_programadas(request):
     """Muestra una lista de las instancias de servicio programadas para el nutricionista autenticado."""
     instancias = InstanciaServicio.objects.filter(
         id_proveedor_servicio=request.user,
-        # ELIMINA CUALQUIER FILTRO SIMILAR AQUÍ SI LO TENÍAS:
-        # id_servicio__id_tipo_servicio__tipo_usuario='Nutricionista' (o similar)
-        # Por la misma razón que en la vista del preparador físico.
     ).select_related('id_servicio', 'id_proveedor_servicio').order_by('fecha_hora_programada')
 
     instancias_con_clientes = instancias.prefetch_related(
@@ -784,23 +795,25 @@ def nutricionista_servicio_eliminar(request, id_servicio):
 
 # Vistas para la API externa de clientes (Sabor Latino)
 def listar_clientes(request):
-    """
-    Función que consume la API externa de clientes y muestra los datos.
-    Esto es solo un ejemplo, no directamente relacionado con el carrito.
-    """
-    url = "https://api-sabor-latino-chile.onrender.com/clientes"
-    clientes = []
+    """Muestra una lista de clientes obtenida de una API externa."""
+    print(f"DEBUG en listar_clientes: User autenticado: {request.user.is_authenticated}")
+    if request.user.is_authenticated:
+        try:
+            print(f"DEBUG en listar_clientes: Tipo de usuario (del modelo): {request.user.id_tipo_usuario.tipo_usuario}")
+            print(f"DEBUG en listar_clientes: ID de tipo de usuario: {request.user.id_tipo_usuario.id_tipo_usuario}")
+        except AttributeError:
+            print(f"DEBUG en listar_clientes: Tipo de usuario: N/A (o no disponible, puede que id_tipo_usuario sea None)")
+
     try:
+        url = f"{URL_API_SABOR_LATINO}/clientes"
         response = requests.get(url)
-        response.raise_for_status() # Lanza un error para estados HTTP 4xx/5xx
+        response.raise_for_status() # Lanza una excepción si la solicitud HTTP no fue exitosa.
         clientes = response.json()
     except requests.RequestException as e:
-        print(f"Error al conectar con la API de clientes: {e}")
-        messages.error(request, f"Error al cargar clientes desde la API externa: {e}")
-    except json.JSONDecodeError:
-        print("Error: No se pudo decodificar la respuesta JSON de la API de clientes.")
-        messages.error(request, "Error al procesar datos de la API externa de clientes.")
-    return render(request, 'core/clientes.html', {'clientes': clientes}) # Asegúrate de tener 'core/clientes.html'
+        print("Error al conectar con la API:", e)
+        clientes = [] # Si hay un error, la lista de clientes estará vacía.
+
+    return render(request, 'core/clientes.html', {'clientes': clientes})
 
 
 def clean_and_split_rut(rut_completo):
@@ -813,7 +826,7 @@ def clean_and_split_rut(rut_completo):
 def check_rut_in_external_api(user_rut_completo):
     """Verifica el RUT en la API externa."""
     user_rut_numerico, user_dv_rut = clean_and_split_rut(user_rut_completo)
-    print(f"DEBUG (API): Verificando RUT usuario: Num='{user_rut_numerico}', DV='{user_dv_rut}'") # <--- AÑADIDO
+    print(f"DEBUG (API): Verificando RUT usuario: Num='{user_rut_numerico}', DV='{user_dv_rut}'")
     if not user_rut_numerico or not user_dv_rut:
         print(f"DEBUG (API): RUT inválido para verificación: {user_rut_completo}")
         return False
@@ -824,7 +837,7 @@ def check_rut_in_external_api(user_rut_completo):
         for cliente_api in clientes_api_data:
             api_rut_completo = cliente_api.get('numero_rut')
             api_dv_api = cliente_api.get('dv_rut') # <--- ASUMO QUE ESTE CAMPO EXISTE
-            print(f"DEBUG (API): RUT API: Num='{api_rut_completo}', DV='{api_dv_api}'") # <--- AÑADIDO
+            print(f"DEBUG (API): RUT API: Num='{api_rut_completo}', DV='{api_dv_api}'")
             if api_rut_completo == user_rut_numerico and api_dv_api == user_dv_rut:
                 print(f"DEBUG (API): RUT {user_rut_completo} encontrado en la API.")
                 return True
@@ -840,15 +853,6 @@ def check_rut_in_external_api(user_rut_completo):
         print(f"ERROR (API): Error inesperado al verificar RUT: {e}")
         return False
 
-import requests
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.conf import settings
-import logging
-
-logger = logging.getLogger(__name__)
-
-# Nueva Vista para Obtener el Estado del Descuento (para JS en frontend)
 @login_required
 @user_passes_test(is_cliente) # Solo clientes pueden consultar su descuento
 def get_discount_status(request):
@@ -883,33 +887,9 @@ def get_discount_status(request):
         return JsonResponse({'discount_eligible': False})
 
 
-def listar_clientes(request):
-    """Muestra una lista de clientes obtenida de una API externa."""
-    print(f"DEBUG en listar_clientes: User autenticado: {request.user.is_authenticated}")
-    if request.user.is_authenticated:
-        try:
-            print(f"DEBUG en listar_clientes: Tipo de usuario (del modelo): {request.user.id_tipo_usuario.tipo_usuario}")
-            print(f"DEBUG en listar_clientes: ID de tipo de usuario: {request.user.id_tipo_usuario.id_tipo_usuario}")
-        except AttributeError:
-            print(f"DEBUG en listar_clientes: Tipo de usuario: N/A (o no disponible, puede que id_tipo_usuario sea None)")
-
-    try:
-        url = "https://api-sabor-latino-chile.onrender.com/clientes"
-        response = requests.get(url)
-        response.raise_for_status() # Lanza una excepción si la solicitud HTTP no fue exitosa.
-        clientes = response.json()
-    except requests.RequestException as e:
-        print("Error al conectar con la API:", e)
-        clientes = [] # Si hay un error, la lista de clientes estará vacía.
-
-    return render(request, 'core/clientes.html', {'clientes': clientes})
-
-# Define la URL base para la API externa.
-URL = "https://api-sabor-latino-chile.onrender.com"
-
 def buscarAlumno(numrut):
     """Busca un alumno por RUT en una API externa."""
-    respuesta = requests.get(f"{URL}/clientes")
+    respuesta = requests.get(f"{URL_API_SABOR_LATINO}/clientes")
     if respuesta.status_code == 200:
         for e in respuesta.json():
             if int(e['numero_rut']) == numrut:
@@ -932,8 +912,6 @@ def cliente_ver_servicios(request):
         'servicios_disponibles': servicios_disponibles
     }
     return render(request, 'core/cliente_ver_servicios.html', context)
-
-
 
 
 @login_required(login_url='login')
@@ -996,32 +974,33 @@ def cliente_adquirir_servicio(request, servicio_id):
 def cliente_mis_servicios(request):
     """Muestra una lista de todos los servicios que el cliente ha adquirido."""
     # Filtra las adquisiciones del cliente actual, ordenadas por fecha.
-    mis_adquisiciones = DetalleServicioAdquirido.objects.filter(id_cliente=request.user).order_by('-fecha_adquisicion')
+    mis_adquisiciones = DetalleServicioAdquirido.objects.filter(id_cliente=request.user).order_by('-fecha_hora_adquisicion')
 
     context = {
         'mis_adquisiciones': mis_adquisiciones
     }
     return render(request, 'core/cliente_mis_servicios.html', context)
-    
-    # Lista de servicios (vista y URL: lista_servicios_pf)
-def lista_servicios_pf(request):
-        servicios = Servicio.objects.all()
-        return render(request, 'core/lista_servicios_pf.html', {'servicios': servicios})
 
+# --- Vistas para la Gestión de Servicios del Preparador Físico ---
+def lista_servicios_pf(request):
+    """Muestra una lista de todos los servicios disponibles."""
+    servicios = Servicio.objects.all()
+    return render(request, 'core/lista_servicios_pf.html', {'servicios': servicios})
 
 def crear_servicio_pf(request):
+    """Permite crear un nuevo servicio."""
     if request.method == 'POST':
         form = ServicioForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('lista_servicios_pf')
     else:
-        form = ServicioForm()  # <-- Definir el form cuando no es POST
+        form = ServicioForm()
 
     return render(request, 'core/crear_servicio_pf.html', {'form': form})
 
-    # Editar servicio (vista y URL: editar_servicio_pf)
 def editar_servicio_pf(request, pk):
+    """Permite editar un servicio existente."""
     servicio = get_object_or_404(Servicio, pk=pk)
     if request.method == 'POST':
         form = ServicioForm(request.POST, instance=servicio)
@@ -1032,39 +1011,27 @@ def editar_servicio_pf(request, pk):
         form = ServicioForm(instance=servicio)
     return render(request, 'core/lista_servicios_pf_crear.html', {'form': form})
 
-
-
-    # Eliminar servicio (vista y URL: eliminar_servicio_pf)
 def confirmar_eliminar_pf(request, pk):
+    """Permite eliminar un servicio existente."""
     servicio = get_object_or_404(Servicio, pk=pk)
     if request.method == 'POST':
-        servicio.delete()   
+        try:
+            servicio.delete()
+            messages.success(request, 'Servicio eliminado exitosamente.')
+        except Exception as e:
+            messages.error(request, f'Error al eliminar el servicio: {e}. Puede haber instancias relacionadas que impidan la eliminación.')
         return redirect('lista_servicios_pf')
     return render(request, 'core/confirmar_eliminar_pf.html', {'servicio': servicio})
 
+# Lista mensajes (vista y URL: lista_mensajes_pf)
+# def lista_mensajes_pf(request):
+#     """Vista para listar mensajes del preparador físico (PENDIENTE DE IMPLEMENTACIÓN)."""
+#     pass # Implementa la lógica aquí cuando tengas el modelo de Mensaje
 
-    # Lista mensajes (vista y URL: lista_mensajes_pf)
-   
-
-
-
-# API PAYPAL:
-
-import json
-from decimal import Decimal
-import requests
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
-import json
 from decimal import Decimal
-import requests
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
-# URL de la API externa (global o en settings)
-
-@csrf_exempt
+# --- API PAYPAL ---
 @csrf_exempt
 def crear_orden_paypal(request):
     if request.method == 'POST':
@@ -1133,34 +1100,23 @@ def calculate_total_from_cart(cart_data):
         total += Decimal(item['precio']) * item['cantidad']
     return total
 
-# detalle producto
-
+# --- Detalle de Producto y Comentarios ---
 def detalle_producto(request, id_producto):
-    # Ya estás obteniendo el objeto Producto correctamente aquí
-    # Siempre usa 'pk' para la clave primaria, o el nombre real del campo si no es 'id'
     producto = get_object_or_404(Producto, pk=id_producto)
 
-    # Filtra los comentarios por el objeto 'producto' (no solo el ID)
     comentarios = ComentarioValoracionProducto.objects.filter(id_producto=producto).order_by('-fecha_comentario')
 
     if request.method == 'POST':
         form = ComentarioValoracionForm(request.POST)
         if form.is_valid():
-            # Crea una instancia del comentario pero NO la guarda todavía en la base de datos
-            # Esto nos permite asignarle las claves foráneas antes de guardarla.
-            nuevo_comentario = form.save(commit=False) 
-            
-            # Asigna el objeto Producto (la instancia completa) al campo id_producto
-            nuevo_comentario.id_producto = producto 
-            
-            # Asigna el objeto Usuario actual (request.user) al campo id_usuario.
-            # Asegúrate de que 'request.user' sea una instancia de tu modelo de Usuario.
-            nuevo_comentario.id_usuario = request.user 
-            
-            # Ahora sí, guarda el comentario con las relaciones correctas en la base de datos
-            nuevo_comentario.save() 
-
+            nuevo_comentario = form.save(commit=False)
+            nuevo_comentario.id_producto = producto
+            nuevo_comentario.id_usuario = request.user
+            nuevo_comentario.save()
+            messages.success(request, 'Comentario añadido exitosamente.')
             return redirect('detalle_producto', id_producto=id_producto)
+        else:
+            messages.error(request, f"Error en el formulario de comentario: {form.errors.as_text()}")
     else:
         form = ComentarioValoracionForm()
 
@@ -1170,14 +1126,16 @@ def detalle_producto(request, id_producto):
         'form': form
     })
 
-
-#seguimiento
+# --- Seguimiento de Pedidos ---
+# Las claves AFTERSHIP_API_KEY y AFTERSHIP_API_BASE_URL se deben definir en settings.py
+# o ser importadas desde un archivo de configuración como gymlife.config
 try:
     from gymlife.config import AFTERSHIP_API_KEY, AFTERSHIP_API_BASE_URL
 except ImportError:
-        # Asegúrate de que estas variables de entorno estén configuradas en tu sistema
-        AFTERSHIP_API_KEY = os.environ.get('AFTERSHIP_API_KEY', '')
-        AFTERSHIP_API_BASE_URL = os.environ.get('AFTERSHIP_API_BASE_URL', 'https://api.aftership.com/v4')
+    # Asegúrate de que estas variables de entorno estén configuradas en tu sistema
+    # y de que os esté importado
+    AFTERSHIP_API_KEY = os.environ.get('AFTERSHIP_API_KEY', '')
+    AFTERSHIP_API_BASE_URL = os.environ.get('AFTERSHIP_API_BASE_URL', 'https://api.aftership.com/v4')
 
 
 @login_required(login_url='login')
@@ -1191,18 +1149,17 @@ def seguimiento_pedido(request, venta_id):
 
     try:
         # Intenta obtener la VentaProducto y asegurar que pertenece al usuario
+        # Asumiendo que request.user.id_usuario es el campo correcto en tu modelo de Usuario personalizado.
         venta = get_object_or_404(VentaProducto, id_venta_producto=venta_id, id_cliente=request.user)
-        # Ajusta la línea anterior según tu modelo de usuario y VentaProducto.id_cliente
 
         # Obtener detalles de productos
-        detalles_compra = DetalleCompra.objects.filter(id_venta_producto=venta)
+        detalles_compra = DetalleCompra.objects.filter(id_venta_producto=venta).select_related('id_producto')
 
-        # Obtener detalles de servicios
+        # Obtener detalles de servicios (si están relacionados con esta venta o con el usuario en general)
         # Si DetalleServicioAdquirido tiene FK a VentaProducto, es más directo:
-        # detalles_servicios = DetalleServicioAdquirido.objects.filter(id_venta_producto=venta)
-        # Si no, esto es más complejo. Por ahora, asumiré una relación indirecta o que no se muestran por venta específica.
-        # Ajusta esta parte si necesitas filtrar servicios por venta específica
-        detalles_servicios = DetalleServicioAdquirido.objects.filter(id_cliente=request.user) # Esto obtiene todos los servicios del usuario
+        # detalles_servicios = DetalleServicioAdquirido.objects.filter(id_venta_producto=venta).select_related('id_servicio', 'id_cliente')
+        # Si no, esto obtiene todos los servicios que el usuario ha adquirido:
+        detalles_servicios = DetalleServicioAdquirido.objects.filter(id_cliente=request.user).select_related('id_servicio', 'id_instancia_servicio').order_by('-fecha_hora_adquisicion')
 
         # Intentar obtener el registro de envío
         try:
@@ -1217,13 +1174,9 @@ def seguimiento_pedido(request, venta_id):
             )
             if error_seguimiento:
                 print(f"Error al obtener seguimiento de AfterShip para Venta ID {venta_id}: {error_seguimiento}")
-        # --- ESTE ES EL CAMBIO CLAVE PARA ELIMINAR EL ERROR DE DEFINICIÓN ---
         # Si hay un envío pero no tiene código de rastreo (aún no se ha asignado)
         elif envio and not envio.codigo_rastreo:
             error_seguimiento = "Pedido con productos físicos, pero el código de rastreo aún no está disponible."
-        # No necesitas un 'elif has_physical_products and not envio' aquí,
-        # la ausencia de 'envio' ya indica que no hay seguimiento físico en la DB.
-        # Puedes añadir un mensaje si quieres, pero no es estrictamente necesario para el error.
 
 
     except VentaProducto.DoesNotExist:
@@ -1244,14 +1197,14 @@ def seguimiento_pedido(request, venta_id):
     return render(request, 'core/seguimiento_pedido.html', context)
 
 
-
-
 @login_required
-def detalle_venta_producto(request, venta_id): # RENOMBRADA LA FUNCIÓN
+def detalle_venta_producto(request, venta_id):
     """
     Vista para mostrar los detalles de una VentaProducto específica.
     """
-    venta = get_object_or_404(VentaProducto, id_venta_producto=venta_id, id_cliente=request.user.id_usuario)
+    # Asumiendo que id_cliente en VentaProducto es una ForeignKey al modelo de Usuario
+    # y que request.user es la instancia del usuario logueado.
+    venta = get_object_or_404(VentaProducto, id_venta_producto=venta_id, id_cliente=request.user)
 
     envio = None
     try:
@@ -1259,7 +1212,7 @@ def detalle_venta_producto(request, venta_id): # RENOMBRADA LA FUNCIÓN
     except Envio.DoesNotExist:
         pass
 
-    detalles_compra = DetalleCompra.objects.filter(id_venta_producto=venta)
+    detalles_compra = DetalleCompra.objects.filter(id_venta_producto=venta).select_related('id_producto')
 
     context = {
         'venta': venta,
